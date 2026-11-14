@@ -1,17 +1,45 @@
 # actuatorlist
 
-A free, open catalog of rotary actuators for robotics. Compare torque, mass, speed, backlash and price with links to the original sources.
+Independent analysis of robot actuators and their supply chains.
 
-**[Browse actuators](https://actuatorlist.com/actuators)** · **[Compare specs](https://actuatorlist.com/compare)** · **[Explore robot joints](https://actuatorlist.com/robots)** · **[See bench tests](https://actuatorlist.com/benchmarks)**
+**[Catalog](https://actuatorlist.com/actuators)** · **[Compare](https://actuatorlist.com/compare)** · **[Trends](https://actuatorlist.com/trends)** · **[API](https://actuatorlist.com/docs/api)** · **[MCP](https://actuatorlist.com/agents.md)**
 
-| [CubeMars AK80-9 V3.0 KV100](https://actuatorlist.com/actuators/cubemars-ak80-9) | [RobStride 02](https://actuatorlist.com/actuators/robstride-02) | [Xiaomi CyberGear](https://actuatorlist.com/actuators/xiaomi-cybergear) |
-| :---: | :---: | :---: |
-| <img src="frontend/public/actuator-images/cubemars-ak80-9.webp" alt="CubeMars AK80-9 actuator" width="180"> | <img src="frontend/public/actuator-images/robstride-02.webp" alt="RobStride 02 actuator" width="180"> | <img src="frontend/public/actuator-images/xiaomi-cybergear.webp" alt="Xiaomi CyberGear actuator" width="180"> |
-| **22 Nm peak** · 9 Nm rated · 485 g | **17 Nm peak** · 6 Nm rated · 380 g | **12 Nm peak** · 4 Nm rated · 317 g |
+### [Torque density vs. cost](https://actuatorlist.com/#scatter)
 
-[Compare these three](https://actuatorlist.com/compare?compare=cubemars-ak80-9,robstride-02,xiaomi-cybergear) · Test conditions may vary by manufacturer.
+[![Torque density vs. price, with the Pareto frontier highlighted](media/readme/pareto-frontier.webp)](https://actuatorlist.com/#scatter)
 
-**Sizing a joint?** [Humanoid sizing guide](https://actuatorlist.com/guides/humanoid-robot-actuators) · [Arm holding-torque calculator](https://actuatorlist.com/tools/robot-arm-torque-calculator)
+### [Torque-density ranking](https://actuatorlist.com/#rankings) · peak N·m/kg
+
+[![Top 20 catalog entries by peak torque per kilogram](media/readme/torque-density-ranking.webp)](https://actuatorlist.com/#rankings)
+
+### [Actuator prices over time](https://actuatorlist.com/trends?chart=actuator-prices)
+
+[![Historical list prices for individual actuators](media/readme/actuator-price-trends.webp)](https://actuatorlist.com/trends?chart=actuator-prices)
+
+<details>
+<summary>More from Trends</summary>
+
+**[Humanoid shipments by company](https://actuatorlist.com/trends?chart=humanoid-share)**
+
+[![Humanoid shipment shares by company and period](media/readme/humanoid-shipments.webp)](https://actuatorlist.com/trends?chart=humanoid-share)
+
+</details>
+
+## Actuator supply chains by country
+
+[🇯🇵 Japan](https://actuatorlist.com/japan) · [🇨🇳 China](https://actuatorlist.com/china) · [🇰🇷 South Korea](https://actuatorlist.com/korea) · [🇺🇸 United States](https://actuatorlist.com/us)
+
+| [🇯🇵 Japan](https://actuatorlist.com/japan) | [🇰🇷 South Korea](https://actuatorlist.com/korea) |
+| :---: | :---: |
+| [![Companies, plants and supply links in Japan](media/readme/japan-supply-chain.webp)](https://actuatorlist.com/japan) | [![Companies, plants and supply links in South Korea](media/readme/south-korea-supply-chain.webp)](https://actuatorlist.com/korea) |
+
+### [Policy tracker · 🇺🇸 United States](https://actuatorlist.com/policy#measure=us-dod-mp-partnership-2025)
+
+[![Department of Defense partnership with MP Materials, including the NdPr price floor and magnet offtake](media/readme/us-policy-tracker.webp)](https://actuatorlist.com/policy#measure=us-dod-mp-partnership-2025)
+
+### [Where actuator researchers and industry leaders work](https://actuatorlist.com/people#pp-map-h)
+
+[![World map of the people directory by country of primary affiliation](media/readme/people-map.webp)](https://actuatorlist.com/people#pp-map-h)
 
 ## For agents
 
