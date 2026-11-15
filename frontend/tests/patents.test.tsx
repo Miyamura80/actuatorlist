@@ -2,7 +2,9 @@ import "./happydom";
 import { afterEach, expect, test } from "bun:test";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { mountApp } from "../src/startup";
-import { Patents, SCOPES } from "../src/pages/patents/Patents";
+import { PILL_SCOPES, Patents, SCOPES } from "../src/pages/patents/Patents";
+import { LEADERS_SHOWN } from "../src/pages/patents/Leaders";
+import { FAMILY_PAGE } from "../src/pages/patents/FamilyList";
 import { bandsFor, filterLine } from "../src/pages/patents/Stream";
 import { BAND_COLORS } from "../src/pages/patents/palette";
 import { placeLabels, spreadLabels } from "../src/pages/patents/label-layout";
@@ -17,6 +19,13 @@ const setUrl = (url: string) => (window as unknown as { happyDOM: { setURL: (url
 
 const scopeButton = (root: HTMLElement, label: string) =>
     [...root.querySelectorAll(".pt-scopes button")].find((b) => b.textContent?.startsWith(label)) as HTMLButtonElement;
+// Pick a scope by label: its pill when it has one, else the "More" select.
+const pickScope = (root: HTMLElement, label: string) => {
+    const pill = scopeButton(root, label);
+    if (pill) return fireEvent.click(pill);
+    const id = SCOPES.find((s) => s.label === label)?.id ?? "missing";
+    fireEvent.change(root.querySelector(".pt-scope-more") as HTMLSelectElement, { target: { value: id } });
+};
 
 test("the app routes /patents to the lazily loaded page", async () => {
     setUrl("http://localhost:1/patents");
@@ -42,25 +51,30 @@ test("renders the stream with a lag shade, the leaderboard and the family list",
     setUrl("http://localhost:1/patents");
     const view = render(<Patents />);
     const c = view.container;
-    expect(c.querySelectorAll(".pt-scopes button")).toHaveLength(SCOPES.length);
+    // All plus the largest technologies as pills, every other one in the select.
+    expect(c.querySelectorAll(".pt-scopes button")).toHaveLength(PILL_SCOPES.length);
+    expect(c.querySelectorAll(".pt-scope-more option[value]:not([value=''])")).toHaveLength(SCOPES.length - PILL_SCOPES.length);
     expect(SCOPES).toHaveLength(TECHNOLOGY_LIST.length + 1);
+    expect(c.querySelectorAll(".cta-primary")).toHaveLength(1);
     // A cutoff line after the last complete year, with the later years greyed out.
     const bands = bandsFor("all", "country").length;
     expect(c.querySelector(".pt-cutoff")).toBeTruthy();
     expect(c.querySelector(".pt-cutoff-text")?.textContent).toBe(`complete through ${COMPLETE_THROUGH}`);
     expect(c.querySelectorAll(".pt-band-tbd")).toHaveLength(bands);
     expect(c.querySelectorAll(".pt-band:not(.pt-band-tbd)")).toHaveLength(bands);
+    expect(c.querySelectorAll(".pt-table tbody tr")).toHaveLength(LEADERS_SHOWN);
+    fireEvent.click(c.querySelector(".pt-leaders .topn-more") as HTMLButtonElement);
     expect(c.querySelectorAll(".pt-table tbody tr")).toHaveLength(15);
     expect(c.querySelector(".fk-tier")).toBeTruthy();
     const links = c.querySelectorAll(".pt-list a");
-    expect(links).toHaveLength(25);
+    expect(links).toHaveLength(FAMILY_PAGE);
     expect(links[0]?.getAttribute("href")).toMatch(/^https:\/\/patents\.google\.com\/patent\/[A-Z]{2}\d/);
 });
 
 test("picking a technology and stacking by technology is kept in the URL", () => {
     setUrl("http://localhost:1/patents");
     const view = render(<Patents />);
-    fireEvent.click(scopeButton(view.container, "Strain-wave gears"));
+    pickScope(view.container, "Strain-wave gears");
     expect(window.location.search).toBe("?technology=strain-wave");
     const first = view.container.querySelector(".pt-table tbody tr .pt-who")?.textContent;
     expect(first).toContain(leaderboard("strain-wave")[0]?.name ?? "missing");
@@ -115,7 +129,7 @@ test("the quality filter is kept in the URL and keeps the y axis", () => {
     expect(filterLine("all", "intl")).toMatch(/^[\d,]+ of [\d,]+ families 2010-\d\d \(\d+%\) · China \d+%$/);
     // Same scale: the filtered stream shrinks instead of rescaling.
     expect(ticks()).toBe(before);
-    fireEvent.click(scopeButton(c, "NdFeB magnets"));
+    pickScope(c, "NdFeB magnets");
     expect(window.location.search).toBe("?technology=ndfeb&filter=intl");
     fireEvent.click(toggle(c, "Quality filter", "All"));
     expect(window.location.search).toBe("?technology=ndfeb");

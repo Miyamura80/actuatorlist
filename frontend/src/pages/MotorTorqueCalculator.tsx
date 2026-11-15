@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PublicHeader } from "../components/PublicHeader";
 import { Nomograph } from "../components/Nomograph";
-import { RequirementShortlist } from "../components/RequirementShortlist";
+import { RequirementShortlist, ShortlistResult } from "../components/RequirementShortlist";
 import { useToolResultEvent } from "../lib/tool-events";
 import {
     type CalcState,
@@ -173,6 +173,9 @@ export function MotorTorqueCalculator({ menuOpen = false }: { menuOpen?: boolean
                                     {fmt(shaft.torqueNm)} N·m × {fmt(shaft.speedRpm)} rpm ÷ 9.549 = {fmt(shaft.powerW)} W
                                 </p>
                             )}
+                            {shaft && shaft.torqueNm > 0 && (
+                                <ShortlistResult torqueNm={shaft.torqueNm} speedRpm={shaft.speedRpm} />
+                            )}
                         </div>
 
                         <details className="calc-gear" open={Boolean(state.ratio)}>
@@ -204,18 +207,20 @@ export function MotorTorqueCalculator({ menuOpen = false }: { menuOpen?: boolean
                             <p className="calc-note">You set the efficiency. Blank means an ideal 100%.</p>
                         </details>
 
-                        <div className="calc-examples">
-                            <span>Examples</span>
-                            {EXAMPLES.map((ex) => (
-                                <button
-                                    key={ex.label}
-                                    type="button"
-                                    onClick={() => set({ ...ex.state, units: { torque: "Nm", power: "W", speed: "rpm" } })}
-                                >
-                                    {ex.label}
-                                </button>
-                            ))}
-                        </div>
+                        <details className="calc-examples-fold">
+                            <summary>Examples</summary>
+                            <div className="calc-examples">
+                                {EXAMPLES.map((ex) => (
+                                    <button
+                                        key={ex.label}
+                                        type="button"
+                                        onClick={() => set({ ...ex.state, units: { torque: "Nm", power: "W", speed: "rpm" } })}
+                                    >
+                                        {ex.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </details>
                     </section>
 
                     <Nomograph shaft={shaft} solved={state.solve} />

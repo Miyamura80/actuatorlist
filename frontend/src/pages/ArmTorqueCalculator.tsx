@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PublicHeader } from "../components/PublicHeader";
 import { ArmDiagram } from "../components/ArmDiagram";
-import { RequirementShortlist } from "../components/RequirementShortlist";
+import { RequirementShortlist, ShortlistResult } from "../components/RequirementShortlist";
 import { useToolResultEvent } from "../lib/tool-events";
 import {
     ARM_TORQUE_PATH,
@@ -278,6 +278,9 @@ export function ArmTorqueCalculator({ menuOpen = false }: { menuOpen?: boolean }
                             ))}
                         </tbody>
                     </table>
+                    {need > 0 && (
+                        <ShortlistResult torqueNm={need} limit={5} />
+                    )}
                     </div>
                 ) : (
                     <p className="calc-error">Lengths must be above zero and masses zero or more.</p>

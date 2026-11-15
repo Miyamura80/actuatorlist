@@ -8,23 +8,28 @@ import {
     countryLinks,
     countrySites,
 } from "../../../../../src/supply-chain/country-pages";
-import { type MapArc, type MapArcEnd, SEGMENT_SHORT, sitePins, supplyArcs } from "../../../../../src/supply-chain/map";
+import { type MapArc, type MapArcEnd, SEGMENT_SHORT, segmentMix, sitePins, supplyArcs } from "../../../../../src/supply-chain/map";
 import { getCompany, sitesOf } from "../../../../../src/supply-chain/registry";
 import { Arcs } from "../../../components/maps/Arcs";
 import { ClusterZoom } from "../../../components/maps/ClusterZoom";
+import { insideCluster } from "../../../components/maps/cluster";
+import { MapDrawer } from "../../../components/maps/MapDrawer";
+import { SelectionFocus } from "../../../components/maps/SelectionFocus";
+import { Fold } from "../../../components/ui/Fold";
 import { CountryMap } from "../../../components/maps/CountryMap";
 import type { MapTopology } from "../../../components/maps/geo";
-import { SegmentTile } from "../../../components/maps/SegmentTile";
+import { SegmentMix, SegmentTile } from "../../../components/maps/SegmentTile";
 import { PublicFooter } from "../../../components/PublicFooter";
 import { PublicHeader } from "../../../components/PublicHeader";
-import { CompanyDrawer } from "../../../components/supply-chain/CompanyDrawer";
+import { CompanyCard, CompanyKicker } from "../../../components/supply-chain/CompanyDrawer";
+import { ClusterCard } from "./ClusterCard";
 import { CompanyTable } from "../../../components/supply-chain/CompanyTable";
 import { FootnotesProvider } from "../../../components/supply-chain/footnotes";
 import { SourcesSection } from "../../../components/supply-chain/SourcesSection";
 import { LinkSummary } from "./LinkSummary";
 import { RegionPicker } from "./RegionPicker";
 import { StageStrip } from "./StageStrip";
-import { useCountryState } from "./url-state";
+import { drillLevel, popPatch, useCountryState } from "./url-state";
 import "../../tools.css";
 import "../../../components/supply-chain/supply-chain.css";
 import "./country.css";
@@ -53,6 +58,14 @@ export function CountryPage({ page, menuOpen = false, topology }: {
 }) {
     const state = useCountryState();
     const mapRef = useRef<HTMLElement>(null);
+    const [mapWidth, setMapWidth] = useState(1000);
+    useEffect(() => {
+        const el = mapRef.current;
+        if (!el || typeof ResizeObserver === "undefined") return;
+        const ro = new ResizeObserver(() => setMapWidth(el.clientWidth || 1000));
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
     const title = `${page.name}: actuator supply chain`;
     useEffect(() => {
         const prev = document.title;
@@ -73,7 +86,9 @@ export function CountryPage({ page, menuOpen = false, topology }: {
     const region = page.regions?.list.find((r) => r.code === state.region) ?? null;
     const shown = region ? pins.filter((p) => p.admin1 === region.name) : pins;
     const inRegion = region ? new Set(shown.flatMap((p) => p.companyId ?? [])) : null;
-    const companies = data.companies.filter((c) => (!segment || c.segment === segment) && (!inRegion || inRegion.has(c.id)));
+    const inCluster = state.cluster ? page.clusters.find((c) => c.id === state.cluster) : undefined;
+    const clusterIds = inCluster ? new Set(clusterSites(inCluster, countrySites(page.code)).map((s) => s.companyId)) : null;
+    const companies = data.companies.filter((c) => (!segment || c.segment === segment) && (!inRegion || inRegion.has(c.id)) && (!clusterIds || clusterIds.has(c.id)));
     const siteCount = (id: string) => data.sites.filter((s) => s.companyId === id && (!region || s.admin1 === region.name)).length;
     const inCountry = (id: string | null) => id !== null && data.companies.some((c) => c.id === id);
     // Only this country's companies open a drawer; their sites may be abroad
@@ -113,18 +128,45 @@ export function CountryPage({ page, menuOpen = false, topology }: {
         return regionOf(far) ?? far.country;
     };
     const linkFocus = linkKey ?? linkPin;
-    const arcs = companyId ? touches((id) => id === companyId)
-        : inRegion ? (linkFocus ? regionArcs.filter((a) => partnerKey(a) === linkFocus) : [])
-            : busy ? []
-                : segment ? touches((id) => getCompany(id)?.segment === segment)
-                    : data.arcs;
-    const selectedPin = shown.find((p) => p.id === site?.id)?.id ?? shown.find((p) => p.companyId === companyId)?.id ?? null;
-    const onMap = (id: string) => data.sites.some((s) => s.companyId === id);
     const cluster = page.clusters.find((c) => c.id === state.cluster) ?? null;
     const members = cluster ? [...new Set(clusterSites(cluster, data.sites).map((s) => s.companyId))] : [];
-    const hubs = busy && !region && page.hubs
-        ? page.hubs.map((h) => ({ id: h.id, label: h.label, has: (p: { admin1?: string }) => h.regions.includes(p.admin1 ?? "") }))
-        : undefined;
+    // The map is a drill-down: country (calm: hubs, no links), then a
+    // cluster (its companies and their links), a company (its sites and
+    // links) and a site. A deep link to a company infers its cluster for
+    // the breadcrumb and for stepping back.
+    const level = drillLevel({ ...state, company });
+    const companySites = companyId ? data.sites.filter((s) => s.companyId === companyId) : [];
+    const crumbCluster = cluster
+        ?? (companyId ? page.clusters.find((c) => (site && site.country === page.code ? [site] : companySites).some((s) => insideCluster(c, s))) ?? null : null);
+    const arcs = companyId ? touches((id) => id === companyId)
+        : inRegion ? (linkFocus ? regionArcs.filter((a) => partnerKey(a) === linkFocus) : [])
+            : cluster ? touches((id) => members.includes(id))
+                : [];
+    const selectedPin = shown.find((p) => p.id === site?.id)?.id ?? shown.find((p) => p.companyId === companyId)?.id ?? null;
+    const onMap = (id: string) => data.sites.some((s) => s.companyId === id);
+    const top = !region && !cluster && !companyId;
+    const hubs = !top ? undefined
+        : busy && page.hubs
+            ? page.hubs.map((h) => ({ id: h.id, label: h.label, has: (p: { admin1?: string }) => h.regions.includes(p.admin1 ?? "") }))
+            : page.clusters.map((c) => ({ id: c.id, label: c.label, has: (p: { lat: number; lon: number }) => insideCluster(c, p) }));
+    const isCluster = (id: string) => page.clusters.some((c) => c.id === id);
+    // The drawer covers the map's right side on wide screens; zooms keep the
+    // selection clear of it.
+    const inset = mapWidth > 600 ? Math.min(0.45, 320 / mapWidth) : 0;
+    const focus = level === 3 && site && site.country === page.code
+        ? { id: `site:${site.id}`, points: [site], maxK: 12 }
+        : level >= 2 && companySites.length
+            ? { id: `company:${companyId}`, points: companySites, maxK: 10 }
+            : cluster
+                ? { id: `cluster:${cluster.id}`, points: [{ lat: cluster.bbox[0], lon: cluster.bbox[1] }, { lat: cluster.bbox[2], lon: cluster.bbox[3] }], maxK: 12 }
+                : { id: null, points: [], maxK: 1 };
+    const goTop = () => state.set({ cluster: null, region: null, company: null, site: null });
+    const toCluster = (id: string) => state.set({ cluster: id, region: null, company: null, site: null });
+    const back = () => state.set(level === 2 && !cluster && crumbCluster ? { company: null, site: null, cluster: crumbCluster.id } : popPatch({ ...state, company }));
+    const crumbs = [
+        { label: page.name, onSelect: goTop },
+        ...(companyId && crumbCluster ? [{ label: crumbCluster.label, onSelect: () => toCluster(crumbCluster.id) }] : []),
+    ];
     // Outline ids ("US-TX") of the regions holding a shown site.
     const regionIds = new Set(pins.flatMap((p) => {
         const r = regions?.list.find((x) => x.name === p.admin1);
@@ -190,18 +232,36 @@ export function CountryPage({ page, menuOpen = false, topology }: {
                             table={`${where} sites`}
                             labels={busy && !region ? "zoomed" : true}
                             hubs={hubs}
+                            onHub={(id) => (isCluster(id) ? toCluster(id) : undefined)}
+                            inset={inset}
                             boxes={!region}
                         />
+                        <SelectionFocus id={focus.id} points={focus.points} maxK={focus.maxK} inset={inset} />
                     </CountryMap>
-                    {companyId ? <CompanyDrawer
-                        companyId={companyId}
-                        siteId={site?.id ?? null}
-                        country={page.code}
-                        onClose={() => state.set({ site: null, company: null })}
-                        onSelectSite={(id) => state.set({ site: id === site?.id ? null : id, company: companyId })}
-                        onSelectCompany={(id) => state.set({ company: id, site: null })}
-                        onMap={onMap}
-                    /> : null}
+                    {companyId || cluster ? <MapDrawer
+                        open
+                        title={companyId ? (getCompany(companyId)?.name ?? companyId) : (cluster?.label ?? "")}
+                        kicker={companyId ? <CompanyKicker companyId={companyId} country={page.code} /> : `${members.length} companies`}
+                        crumbs={crumbs}
+                        onBack={back}
+                        onClose={goTop}
+                    >
+                        <div className="mk-level" key={companyId ?? cluster?.id}>
+                            {companyId ? <CompanyCard
+                                companyId={companyId}
+                                siteId={site?.id ?? null}
+                                country={page.code}
+                                onSelectSite={(id) => state.set({ site: id === site?.id ? null : id, company: companyId })}
+                                onSelectCompany={(id) => state.set({ company: id, site: null })}
+                                onMap={onMap}
+                            /> : cluster ? <ClusterCard
+                                cluster={cluster}
+                                members={members}
+                                pins={pins.filter((p) => insideCluster(cluster, p))}
+                                onCompany={(id) => state.set({ company: id, site: null })}
+                            /> : null}
+                        </div>
+                    </MapDrawer> : null}
                 </section>
 
                 {region && inRegion && !companyId && regionArcs.length ? <LinkSummary
@@ -216,28 +276,29 @@ export function CountryPage({ page, menuOpen = false, topology }: {
                     onPin={(k) => setLinkPin(k === linkPin ? null : k)}
                 /> : null}
 
-                {cluster ? <section className="cp-cluster" aria-label={cluster.label}>
-                    <h2>{cluster.label} <span>{members.length} companies</span></h2>
-                    <p>{cluster.blurb}</p>
-                    <ul>{members.map((id) => <li key={id}>
-                        <button type="button" onClick={() => state.set({ company: id, site: null })}>{getCompany(id)?.name ?? id}</button>
-                    </li>)}</ul>
-                    <button type="button" className="cp-cluster-close" onClick={() => state.set({ cluster: null })}>Show all of {page.name}</button>
-                </section> : null}
+                <Fold
+                    key={cluster?.id ?? region?.code ?? "all"}
+                    className="cp-companies"
+                    title={cluster ? `Companies in ${cluster.label}` : region ? `Companies in ${region.name}` : "All companies"}
+                    count={companies.length}
+                    headline={<SegmentMix mix={segmentMix(companies)} size={12} layout="row" />}
+                    defaultOpen={!!cluster || !!region}
+                >
+                    <CompanyTable
+                        companies={companies}
+                        sitesOf={siteCount}
+                        sitesLabel={`Sites in ${where}`}
+                        selectedId={companyId}
+                        onSelect={(id) => {
+                            state.set({ company: id, site: null });
+                            mapRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+                        }}
+                        caption={region
+                            ? `${companies.length} companies${segment ? `: ${SEGMENT_LABEL[segment]}` : ""} with a site in ${region.name}`
+                            : `${companies.length} companies${segment ? `: ${SEGMENT_LABEL[segment]}` : ""}, headquartered in ${page.name} or with a site there`}
+                    />
 
-                <CompanyTable
-                    companies={companies}
-                    sitesOf={siteCount}
-                    sitesLabel={`Sites in ${where}`}
-                    selectedId={companyId}
-                    onSelect={(id) => {
-                        state.set({ company: id, site: null });
-                        mapRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
-                    }}
-                    caption={region
-                        ? `${companies.length} companies${segment ? `: ${SEGMENT_LABEL[segment]}` : ""} with a site in ${region.name}`
-                        : `${companies.length} companies${segment ? `: ${SEGMENT_LABEL[segment]}` : ""}, headquartered in ${page.name} or with a site there`}
-                />
+                </Fold>
 
                 <SourcesSection />
             </main>

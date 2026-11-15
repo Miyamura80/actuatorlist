@@ -36,20 +36,25 @@ test("the app routes /prices to the prices page", async () => {
     }
 });
 
-test("opens on the class trend with a legend entry and fit text per class", () => {
+test("opens on the class trend with a legend chip and slope per fitted class", () => {
     setUrl("http://localhost:1/prices");
     const view = render(<Prices />);
     expect(view.container.querySelectorAll(".pr-tabs button")).toHaveLength(PRICE_VIEWS.length);
     expect(view.container.querySelector("#pr-trend-title")).toBeTruthy();
-    const trends = classTrends();
+    const all = classTrends();
+    const fitted = all.filter((t) => t.fit);
+    const trends = fitted.length ? fitted : all;
     const legend = view.container.querySelectorAll(".tr-legend button");
     expect(legend).toHaveLength(trends.length);
     for (const [i, t] of trends.entries()) {
         const text = legend[i]?.textContent ?? "";
         expect(text).toContain(t.label);
-        expect(text).toContain(t.fit ? "R²" : "no fit yet");
+        // Chips carry the slope only; R² sits in the method table.
+        if (t.fit) expect(text).toMatch(/[↑↓→] [+-]\d+\.\d%\/yr$/);
+        expect(text).not.toContain("R²");
     }
-    expect(view.container.querySelectorAll(".pr-fit-line").length).toBe(trends.filter((t) => t.fit).length);
+    expect(view.container.querySelector(".tr-data")?.textContent).toContain("R²");
+    expect(view.container.querySelectorAll(".pr-fit-line").length).toBe(fitted.length);
     // Legend buttons highlight one class.
     fireEvent.click(legend[0] as HTMLElement);
     expect(legend[0]?.getAttribute("aria-pressed")).toBe("true");

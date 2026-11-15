@@ -106,6 +106,7 @@
 .sc-share-none .sc-share-pct { color: var(--muted); }
 .sc-share-other { padding-top: 8px; border-top: 1px dashed var(--line); color: var(--muted); }
 .sc-share-other .sc-share-fill { background: var(--line-strong); }
+.sc-share-more { margin-top: 10px; }
 
 /* Sources */
 .sc-sources { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }

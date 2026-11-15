@@ -55,6 +55,14 @@ interface Focus {
     setFocus: (id: string | null) => void;
 }
 
+// Each joint's section is a closed fold below the app (details#joint-knee).
+// A joint link opens it; the link's own href then moves the hash to the
+// joint's heading, so the browser scrolls there.
+function openJoint(id: string) {
+    const fold = document.getElementById(`joint-${id}`);
+    if (fold?.tagName === "DETAILS") (fold as HTMLDetailsElement).open = true;
+}
+
 function focusHandlers(id: string, setFocus: Focus["setFocus"]) {
     return {
         onMouseEnter: () => setFocus(id),
@@ -94,6 +102,7 @@ function Callouts({
                         key={j.id}
                         className={`jm-callout jm-${j.id}${focus === j.id ? " on" : ""}`}
                         href={`#${j.id}`}
+                        onClick={() => openJoint(j.id)}
                         {...focusHandlers(j.id, setFocus)}
                         aria-label={`${j.n}. ${j.name}: ${j.torqueNm.toFixed(1)} N·m static estimate`}
                     >
@@ -164,12 +173,12 @@ function BillOfJoints({ focus, setFocus }: Focus) {
                     return (
                         <tr key={j.id} className={`jm-${j.id}${focus === j.id ? " on" : ""}`} {...focusHandlers(j.id, setFocus)}>
                             <td>
-                                <a href={`#${j.id}`} className="jm-num" aria-label={`Joint ${j.n}`}>
+                                <a href={`#${j.id}`} className="jm-num" aria-label={`Joint ${j.n}`} onClick={() => openJoint(j.id)}>
                                     {j.n}
                                 </a>
                             </td>
                             <th scope="row">
-                                <a href={`#${j.id}`}>{j.name}</a>
+                                <a href={`#${j.id}`} onClick={() => openJoint(j.id)}>{j.name}</a>
                             </th>
                             <td className="jm-val">{j.torqueNm.toFixed(1)}</td>
                             <td>
@@ -205,6 +214,7 @@ export function HumanoidGuide({ menuOpen = false }: { menuOpen?: boolean }) {
                     async execute(args) {
                         const j = JOINTS.find((x) => x.id === args.joint);
                         if (!j) return result({ error: "Unknown joint", joints: JOINTS.map((x) => x.id) }, true);
+                        openJoint(j.id);
                         window.location.hash = j.id;
                         return result({ shown: j.id, section: window.location.href });
                     },

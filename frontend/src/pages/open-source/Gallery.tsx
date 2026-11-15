@@ -1,16 +1,19 @@
 import {
+    OPENNESS_DIMENSIONS,
+    OPENNESS_LABEL,
     type OpenRobot,
     type OpenRobotType,
     ROBOT_TYPE_LABEL,
     formatCost,
     isNonCommercial,
     opennessScore,
+    opennessStatus,
     repoStat,
     repoUrl,
     totalActuators,
 } from "../../../../src/open-source";
 import { Flag } from "../../components/Flag";
-import { ScoreRing } from "./Score";
+import { ScoreRing, StatusDot } from "./Score";
 
 // Line glyph per robot type, shown when there is no photo.
 function TypeGlyph({ type }: { type: OpenRobotType }) {
@@ -37,47 +40,49 @@ function Card({ robot, active }: { robot: OpenRobot; active: boolean }) {
                 {robot.image ? <img src={robot.image} alt={robot.name} loading="lazy" /> : <TypeGlyph type={robot.type} />}
             </div>
             <div className="os-card-head">
-                <div>
+                <div className="os-card-name">
                     <h3>{robot.name}</h3>
-                    <p className="os-meta">
-                        {ROBOT_TYPE_LABEL[robot.type]}
-                        {robot.country && (
-                            <>
-                                {" · "}
-                                <Flag code={robot.country} />
-                            </>
-                        )}
-                    </p>
+                    {robot.country && <Flag code={robot.country} />}
                 </div>
                 <ScoreRing score={score.score} />
             </div>
-            <dl className="os-facts">
-                <div>
-                    <dt>DOF</dt>
-                    <dd>{robot.dof ?? "n/a"}</dd>
-                </div>
-                <div>
-                    <dt>{robot.bomCostUsd?.basis === "kit" ? "Kit" : "BOM"}</dt>
-                    <dd>{robot.bomCostUsd ? formatCost(robot.bomCostUsd) : "n/a"}</dd>
-                </div>
-                <div>
-                    <dt>Stars</dt>
-                    <dd>{stars == null ? "n/a" : stars.toLocaleString("en-US")}</dd>
-                </div>
-            </dl>
-            <p className="os-chips">
-                {robot.licence.length === 0 ? (
-                    <span className="os-chip is-none">No licence</span>
-                ) : (
-                    robot.licence.map((l) => (
-                        <span key={l} className={`os-chip${isNonCommercial(l) ? " is-nc" : ""}`}>
-                            {l.replace(/^LicenseRef-/, "")}
-                        </span>
-                    ))
-                )}
-            </p>
+            {/* Summary first: photo, name, flag and score. Facts open on tap. */}
             <details className="os-more">
                 <summary>{totalActuators(robot)} actuators</summary>
+                <p className="os-meta">{ROBOT_TYPE_LABEL[robot.type]}</p>
+                <dl className="os-facts">
+                    <div>
+                        <dt>DOF</dt>
+                        <dd>{robot.dof ?? "n/a"}</dd>
+                    </div>
+                    <div>
+                        <dt>{robot.bomCostUsd?.basis === "kit" ? "Kit" : "BOM"}</dt>
+                        <dd>{robot.bomCostUsd ? formatCost(robot.bomCostUsd) : "n/a"}</dd>
+                    </div>
+                    <div>
+                        <dt>Stars</dt>
+                        <dd>{stars == null ? "n/a" : stars.toLocaleString("en-US")}</dd>
+                    </div>
+                </dl>
+                <p className="os-chips">
+                    {robot.licence.length === 0 ? (
+                        <span className="os-chip is-none">No licence</span>
+                    ) : (
+                        robot.licence.map((l) => (
+                            <span key={l} className={`os-chip${isNonCommercial(l) ? " is-nc" : ""}`}>
+                                {l.replace(/^LicenseRef-/, "")}
+                            </span>
+                        ))
+                    )}
+                </p>
+                <ul className="os-open" aria-label="Openness">
+                    {OPENNESS_DIMENSIONS.map((d) => (
+                        <li key={d}>
+                            <StatusDot status={opennessStatus(robot, d)} />
+                            {OPENNESS_LABEL[d]}
+                        </li>
+                    ))}
+                </ul>
                 <p>{robot.summary}</p>
                 <ul className="os-joints">
                     {robot.joints.map((j) => (

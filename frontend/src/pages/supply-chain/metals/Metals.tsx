@@ -66,7 +66,7 @@ export function Metals({ menuOpen = false }: { menuOpen?: boolean }) {
                     <p className="tool-kicker">Supply chain · as of {METALS_AS_OF}</p>
                     <h1>{TITLE}</h1>
                     <p className="tool-lede">Six metals make an actuator's magnet. Control tightens from mine to magnet.</p>
-                    <a className="mt-cta" href="/api/v1/metals">Get the data</a>
+                    <a className="mt-cta cta-primary" href="/api/v1/metals">Get the data</a>
                 </header>
 
                 <Section n="01" id="what-goes-in" title="What goes in">
@@ -76,7 +76,6 @@ export function Metals({ menuOpen = false }: { menuOpen?: boolean }) {
 
                 <Section n="02" id="where-from" title="Where it comes from">
                     <WhereFrom element={state.element} stage={state.stage} chain={state.chain}
-                        onElement={(element) => update({ element })}
                         onStage={(stage) => update({ stage })}
                         onChain={(chain) => update({ chain })} />
                 </Section>

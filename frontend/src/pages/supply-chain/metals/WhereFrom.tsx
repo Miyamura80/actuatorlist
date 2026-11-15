@@ -36,21 +36,20 @@ function Stage({ metal, stage }: { metal: MetalId; stage: MetalStage }) {
     </div>;
 }
 
-export function WhereFrom({ element, stage, chain, onElement, onStage, onChain }: {
+// The element comes from the tiles in section 01; this section only names it.
+export function WhereFrom({ element, stage, chain, onStage, onChain }: {
     element: MetalId;
     stage: MetalStage;
     chain: boolean;
-    onElement: (id: MetalId) => void;
     onStage: (s: MetalStage) => void;
     onChain: (on: boolean) => void;
 }) {
     const stages = chain ? [...METAL_STAGES] : [stage];
     return <div className="mt-where">
         <div className="mt-controls">
-            <span className="mt-seg" role="group" aria-label="Element">
-                {METALS.map((m) => <button key={m.id} type="button" aria-pressed={m.id === element}
-                    className={m.id === element ? "is-on" : undefined} onClick={() => onElement(m.id)}>{m.symbol}</button>)}
-            </span>
+            <a className="mt-picked" href="#what-goes-in" title="Change the element in section 01">
+                {METALS.find((m) => m.id === element)?.symbol ?? element}
+            </a>
             <span className="mt-seg" role="group" aria-label="Stage">
                 {METAL_STAGES.map((s) => <button key={s} type="button" aria-pressed={!chain && s === stage}
                     className={!chain && s === stage ? "is-on" : undefined}

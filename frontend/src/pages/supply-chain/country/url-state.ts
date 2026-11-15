@@ -52,3 +52,21 @@ export function useCountryState(): CountryState & { set: (patch: Partial<Country
     }, []);
     return { ...readCountryState(current), set };
 }
+
+// How deep the map is drilled: 0 country, 1 cluster or region, 2 company,
+// 3 site. Derived from the URL, so Back steps up one level.
+export type DrillLevel = 0 | 1 | 2 | 3;
+
+export function drillLevel(s: Pick<CountryState, "cluster" | "region" | "company" | "site">): DrillLevel {
+    if (s.site) return 3;
+    if (s.company) return 2;
+    return s.cluster || s.region ? 1 : 0;
+}
+
+// The patch that leaves the deepest level (Escape, a breadcrumb step back).
+export function popPatch(s: Pick<CountryState, "cluster" | "region" | "company" | "site">): Partial<CountryState> {
+    if (s.site) return { site: null };
+    if (s.company) return { company: null, site: null };
+    if (s.cluster || s.region) return { cluster: null, region: null };
+    return {};
+}

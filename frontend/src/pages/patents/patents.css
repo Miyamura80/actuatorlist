@@ -17,7 +17,11 @@
 }
 .pt-scopes button span { font: 10px var(--mono); color: var(--tr-faint); }
 .pt-scopes button[aria-pressed="true"] { color: var(--cyan); border-color: var(--cyan); }
-.pt-scopes button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.pt-scopes button:focus-visible, .pt-scope-more:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.pt-scope-more { min-height: 34px; padding: 0 8px; border: 1px dashed var(--line-strong); border-radius: 2px; background: var(--panel); color: var(--muted); font: 500 13px var(--sans); cursor: pointer; }
+.pt-cta { margin-top: 12px; }
+.pt-options { margin: 0; }
+.pt-options .fold-body { padding-top: 8px; }
 .pt-scope-line { margin: 10px 0 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
 .pt-scope-line b { color: var(--text); font-weight: 600; }
 

@@ -397,6 +397,9 @@ export function ProcessMap({ chain, focusId, onFocus, height = 600 }: ProcessMap
             </button>
         </div>
         {focusId ? null : <p className="mf-level" aria-live="polite">{showSteps ? "Steps" : chain.parallel ? "Parts" : "Stages"}</p>}
-        <Minimap layout={layout} transform={t} viewW={viewW} viewH={height} onCenter={centerOn} focusId={focusId} />
+        {/* The minimap only earns its space once the map no longer fits. */}
+        {t.k > fitK * 1.05
+            ? <Minimap layout={layout} transform={t} viewW={viewW} viewH={height} onCenter={centerOn} focusId={focusId} />
+            : null}
     </div>;
 }

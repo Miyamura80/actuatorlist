@@ -126,6 +126,16 @@
     cursor: pointer;
 }
 .calc-examples button:hover { border-color: var(--cyan); color: var(--cyan); }
+/* Motor calculator: the examples wait behind one row. */
+.calc-examples-fold { border-top: 1px solid var(--line); }
+.calc-examples-fold > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; list-style: none; font: 600 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.calc-examples-fold > summary::-webkit-details-marker { display: none; }
+.calc-examples-fold > summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform 160ms ease; }
+.calc-examples-fold[open] > summary::before { transform: rotate(45deg); }
+.calc-examples-fold > summary:hover { color: var(--text); }
+.calc-examples-fold > summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.calc-examples-fold .calc-examples { border-top: 0; padding: 0 0 12px; }
+@media (prefers-reduced-motion: reduce) { .calc-examples-fold > summary::before { transition: none; } }
 
 /* The nomograph is the figure on the sheet. */
 .nomo { margin: 0; padding: 20px 12px 8px; display: flex; justify-content: center; align-items: flex-start; min-width: 0; }
@@ -215,6 +225,13 @@
 .req-actions { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 16px 0 6px; }
 .req-cta { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; background: var(--cyan); color: var(--black); font-weight: 600; border-radius: 2px; }
 .req-cta:hover { text-decoration: none; background: var(--text); }
+/* Next to the result: the count that reaches it and the one primary action. */
+.req-result { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.req-result p { margin: 0; color: var(--text); font: 600 13px var(--mono); }
+.arm-results-wrap .req-result { border-top: 0; }
+.req-more { min-height: 44px; padding: 0 2px; border: 0; background: transparent; color: var(--cyan); font: 12px var(--mono); cursor: pointer; }
+.req-more:hover { text-decoration: underline; }
+.req-more:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 /* Key: closed by default, opens by click, tap or keyboard. */
 .req-key { margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .req-key summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer; font: 12px var(--mono); list-style: none; }
@@ -259,6 +276,10 @@ body:has(.tool-page) #catalog-content .req-name:hover { color: var(--cyan); }
 body:has(.tool-page) #catalog-content .brand-badge text { fill: #000; }
 /* Section icons, and warning marks on the "does not tell you" lists. */
 body:has(.tool-page) #catalog-content h2:has(.ga-h2-icon) { display: flex; align-items: center; gap: 12px; }
+/* Folded sections (server .ga-fold): the h2 is a single summary row. */
+body:has(.tool-page) #catalog-content .ga-fold > summary h2 { font-size: 14px; margin: 0; padding: 0; border: 0; gap: 8px; }
+body:has(.tool-page) #catalog-content .ga-fold > summary .ga-h2-icon { width: 18px; height: 18px; }
+body:has(.tool-page) #catalog-content .ga-fold-body > :first-child { margin-top: 4px; }
 .ga-h2-icon { flex: none; fill: none; stroke: var(--cyan); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .ga-ic-limits { stroke: var(--amber); }
 /* Caveats: one chip per limit, glyph and label up front, the reason on tap. */

@@ -3,19 +3,12 @@
    status trace and everything else fades back. Square, flat, per BRAND.md. */
 
 .pl-head { position: relative; }
+/* The one CTA: .cta-primary gives the look, this only places it. */
 .pl-cta {
     position: absolute;
     right: 0;
     bottom: 20px;
-    padding: 8px 14px;
-    background: var(--cyan);
-    color: var(--black);
-    font: 600 12px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    text-decoration: none;
 }
-.pl-cta:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .pl-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
 /* Glyphs: the shared object tile (components/glyphs/object-tile.css) plus
@@ -52,6 +45,9 @@
     outline-offset: -2px;
 }
 .pl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pl-more { flex: 1 1 auto; }
+.pl-more .fold-body { padding-top: 8px; }
+.pl-latest .topn-more { justify-self: start; margin-top: 8px; }
 .pl-select { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); }
 .pl-select span { padding: 0 10px; font: 600 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .pl-select select {
@@ -149,8 +145,7 @@
 @keyframes pl-trace { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 /* Detail card */
-.pl-card-slot { min-height: 64px; margin-top: 14px; scroll-margin-top: 80px; }
-.pl-hint { margin: 0; padding: 20px 0; color: var(--muted); font: 12px var(--mono); }
+.pl-card-slot { margin-top: 14px; scroll-margin-top: 80px; }
 .pl-card { border: 1px solid var(--line-strong); padding: 18px 20px 20px; animation: pl-lift 160ms ease-out both; }
 @keyframes pl-lift { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .pl-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: start; }
@@ -184,7 +179,7 @@
 .pl-feed { display: inline-grid; place-items: center; width: 28px; height: 28px; color: var(--muted); }
 .pl-feed:hover { color: var(--cyan); }
 .pl-latest { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.pl-latest li { display: grid; grid-template-columns: 96px 16px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.pl-latest-row { display: grid; grid-template-columns: 96px 16px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 40px; border-bottom: 1px solid var(--line); font-size: 14px; }
 .pl-latest .pl-mono { font-size: 12px; color: var(--muted); }
 .pl-latest b { font: 600 11px var(--mono); }
 .pl-link { padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
@@ -204,7 +199,7 @@
 }
 
 @media (max-width: 720px) {
-    .pl-cta { position: static; display: inline-block; margin-top: 14px; }
+    .pl-cta { position: static; display: inline-flex; margin-top: 14px; }
     .pl-types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .pl-types button:nth-child(3) { border-left: 0; }
     .pl-types button:nth-child(n + 3) { border-top: 1px solid var(--line-strong); }
@@ -212,8 +207,8 @@
     .pl-lane-head { padding: 0 6px; flex-direction: column; justify-content: center; gap: 2px; }
     .pl-lane-name { display: none; }
     .pl-lane-n { margin: 0; }
-    .pl-latest li { grid-template-columns: 72px 16px minmax(0, 1fr); }
-    .pl-latest li b { display: none; }
+    .pl-latest-row { grid-template-columns: 72px 16px minmax(0, 1fr); }
+    .pl-latest-row b { display: none; }
     .pl-history li .pl-mono { width: auto; }
     .pl-card { padding: 14px; }
     .pl-list th:nth-child(2), .pl-list td:nth-child(2) { display: none; }

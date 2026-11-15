@@ -16,10 +16,13 @@ test("gallery picks are separate accessible controls with a compact shareable tr
     expect(boxes.every(box => !box.closest("a"))).toBe(true);
     expect(view.container.querySelectorAll("a.bento-card")).toHaveLength(ACTUATORS.length);
     fireEvent.click(boxes[0]);
-    expect(view.getByRole("button", { name: "Compare" }).hasAttribute("disabled")).toBe(true);
+    // One pick: no Compare action yet; the primary link appears at two.
+    expect(view.queryByRole("link", { name: "Compare selected actuators" })).toBeNull();
     fireEvent.click(boxes[1]);
     const link = view.getByRole("link", { name: "Compare selected actuators" });
     expect(link.getAttribute("href")).toStartWith("/compare?compare=");
+    expect(link.classList.contains("cta-primary")).toBe(true);
+    expect(view.container.querySelectorAll(".cta-primary")).toHaveLength(1);
     expect(view.getAllByRole("button", { name: /^Remove / })).toHaveLength(2);
     expect(new URLSearchParams(window.location.search).get("compare")?.split(",")).toHaveLength(2);
     fireEvent.click(view.getByRole("button", { name: "Clear" }));

@@ -132,7 +132,12 @@
 .bm-card-link:hover .bm-card-name { text-decoration: underline; text-decoration-color: var(--cyan); }
 .bm-card-kicker { font: 600 10px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
 .bm-card-name { font-size: 18px; font-weight: 600; line-height: 1.25; }
-.bm-card-take { flex: 1; margin: 10px 0 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.bm-card-take { margin: 10px 0 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.bm-card-idiot { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 8px; }
+.bm-card-idiot .bm-idiot { font: 700 40px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.bm-card-idiot span { font: 600 10px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.bm-card-more { margin-top: 8px; }
+.bm-head .bm-cta { margin-top: 14px; }
 .bm-compare { display: grid; gap: 24px; }
 .bm-compare[hidden] { display: none; }
 .bm-compare-one h3 { margin: 0 0 6px; font: 600 12px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }

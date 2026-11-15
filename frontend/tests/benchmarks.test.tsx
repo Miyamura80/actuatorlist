@@ -19,14 +19,18 @@ test("renders the five sections, one call to action and a row per actuator and r
     const c = view.container;
     expect(view.getByRole("heading", { level: 1 }).textContent).toBe("Benchmarks");
     expect([...c.querySelectorAll(".bm-sec h2")].map((h) => h.textContent)).toEqual([
-        "01Datasheet vs measured",
-        "02Torque-speed",
-        "03Thermal derating",
-        "04Measured leaderboard",
+        "01Measured leaderboard",
+        "02Datasheet vs measured",
+        "03Torque-speed",
+        "04Thermal derating",
         "05All runs",
     ]);
     expect(c.querySelectorAll(".bm-cta")).toHaveLength(1);
     expect(c.querySelectorAll(".bm-delta li")).toHaveLength(datasheetDeltas(ACTUATORS).length);
+    // Claims met to within half a percent fold into one closed line.
+    const even = datasheetDeltas(ACTUATORS).filter((d) => Math.abs(d.ratio - 1) < 0.005).length;
+    expect(c.querySelectorAll(".bm-even .bm-delta li")).toHaveLength(even);
+    expect(c.querySelectorAll(".bm-delta-group .bm-bar.is-even")).toHaveLength(0);
     expect(c.querySelectorAll(".bm-leader li")).toHaveLength(measuredLeaderboard(ACTUATORS).length);
     expect(c.querySelectorAll(".bm-run")).toHaveLength(BENCHMARK_RUNS.length);
     // Independent tests lead and are the only rows with a verdict.

@@ -37,19 +37,12 @@
 .al-f-transmission { --fam: var(--al-transmission); }
 
 .al-head { position: relative; }
+/* The one CTA: .cta-primary gives the look, this only places it. */
 .al-cta {
     position: absolute;
     right: 0;
     bottom: 20px;
-    padding: 8px 14px;
-    background: var(--cyan);
-    color: var(--black);
-    font: 600 12px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    text-decoration: none;
 }
-.al-cta:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 .al-label { margin: 0; font: 600 10px/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .al-note { margin: 6px 0 0; font: 11px/1.5 var(--mono); color: var(--muted); }
@@ -139,7 +132,6 @@
 .al-evidence svg { width: 16px; height: 16px; flex: none; }
 .al-evidence .al-glyph { fill: none; stroke: var(--fam); stroke-width: 1.5; }
 .al-evidence b { color: var(--fam); font: 600 13px var(--sans); }
-.al-evidence.is-baseline span { color: var(--text); font-family: var(--sans); }
 
 /* Milestone strip */
 .al-strip { margin: 14px 0 0; }
@@ -162,12 +154,13 @@
 .al-ms.is-lit circle, .al-ms.is-lit rect, .al-ms.is-lit path { stroke: var(--text); stroke-width: 2; }
 
 /* Details */
-.al-more { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 8px; }
-.al-more summary { cursor: pointer; font: 600 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); min-height: 32px; display: flex; align-items: center; }
-.al-more summary:hover { color: var(--cyan); }
-.al-more ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; max-width: 80ch; }
-.al-more li { font-size: 13px; line-height: 1.5; color: var(--muted); }
-.al-more li b { display: inline-block; min-width: 88px; color: var(--text); font: 600 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.al-fold { margin-top: 14px; }
+.al-fold .al-strip { margin-top: 0; }
+.al-fold h3.al-label { margin: 6px 0 6px; }
+.al-fold h3.al-label + .al-table-wrap { margin-top: 0; }
+.al-method { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 6px; max-width: 80ch; }
+.al-method li { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.al-method li b { display: inline-block; min-width: 88px; color: var(--text); font: 600 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* Spec card, docked under the chart so the lit node stays in view */
 .al-scrim { display: none; border: 0; padding: 0; background: none; }
@@ -256,7 +249,7 @@
 }
 
 @media (max-width: 760px) {
-    .al-cta { position: static; display: inline-block; margin-top: 12px; }
+    .al-cta { position: static; display: inline-flex; margin-top: 12px; }
     .al-legend { gap: 8px; }
     .al-fam { font-size: 11.5px; }
     .al-sizes { display: none; }
@@ -351,10 +344,6 @@
     .al-table { font-size: 12px; }
     .al-table th, .al-table td { padding: 5px 6px; }
 }
-.al-more summary { list-style: none; gap: 8px; }
-.al-more summary::-webkit-details-marker { display: none; }
-.al-more summary::before { content: "+"; color: var(--cyan); }
-.al-more[open] summary::before { content: "-"; }
 
 /* Hero line */
 .al-head h1 { max-width: 20ch; }

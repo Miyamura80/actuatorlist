@@ -7,14 +7,20 @@ import { Axes, frame, pct, useWidth } from "./chart";
 
 const H = 320;
 
+// Slope only: an arrow and the yearly change. R² lives in the method table.
 function fitText(t: ClassTrend): string {
-    return t.fit ? `${pct(t.fit.annualChange)}/yr · R² ${t.fit.r2.toFixed(2)}` : "no fit yet";
+    if (!t.fit) return "";
+    const c = t.fit.annualChange;
+    return `${c < 0 ? "↓" : c > 0 ? "↑" : "→"} ${pct(c)}/yr`;
 }
 
 // $/N·m over time, one colour per class; thin lines join one actuator's
 // prices and the dashed line is the class's within-actuator fit.
 export function TrendView() {
-    const trends = classTrends();
+    const every = classTrends();
+    // Classes without a fit have no trend to show; their points stay in the table.
+    const fitted = every.filter((t) => t.fit);
+    const trends = fitted.length ? fitted : every;
     const [focus, setFocus] = useState<string | null>(null);
     const [ref, width] = useWidth();
     const all = trends.flatMap((t) => t.points);
@@ -50,7 +56,7 @@ export function TrendView() {
                         >
                             <span className="tr-swatch" aria-hidden="true" />
                             <span className="tr-legend-text">{t.label}</span>
-                            <span className="pr-fit">{fitText(t)}</span>
+                            {t.fit && <span className="pr-fit">{fitText(t)}</span>}
                         </button>
                     </li>
                 ))}
@@ -120,7 +126,7 @@ export function TrendView() {
                             </tr>
                         </thead>
                         <tbody>
-                            {trends.map((t) => (
+                            {every.map((t) => (
                                 <tr key={t.category}>
                                     <th scope="row">{t.label}</th>
                                     <td>{t.points.length}</td>
@@ -143,7 +149,7 @@ export function TrendView() {
                             </tr>
                         </thead>
                         <tbody>
-                            {trends.flatMap((t) =>
+                            {every.flatMap((t) =>
                                 t.points.map((p) => (
                                     <tr key={`${p.point.actuatorId}${p.point.date}${p.point.method}`}>
                                         <th scope="row">{getActuator(p.point.actuatorId)?.name ?? p.point.actuatorId}</th>

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { ARM_TORQUE_PATH } from "@/engineering/arm-torque";
+import { foldSections } from "./html/body";
 import { breadcrumbs, webApplication, webPage } from "./jsonld";
 import type { Page } from "./page-types";
 
@@ -27,6 +28,8 @@ function tool(
         body: () => body,
         persistentFrom,
         persistentLabel: "Method, examples and questions",
+        // Each method section is one closed row; its detail opens on tap.
+        persistentHtml: foldSections,
         jsonLd: () => [
             webPage("WebPage", path, title),
             webApplication(path, title, description),

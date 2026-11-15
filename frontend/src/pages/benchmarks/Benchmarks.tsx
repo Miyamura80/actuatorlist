@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
 import { PublicFooter } from "../../components/PublicFooter";
 import { PublicHeader } from "../../components/PublicHeader";
+import { Fold } from "../../components/ui/Fold";
 import { IndependenceBadge, MAX_OVERLAY, OriginBadge, type Series, ThermalChart, TnChart } from "../../components/benchmarks/charts";
 import {
     BENCHMARKS_AS_OF,
@@ -58,38 +59,47 @@ const GROUPS: { independence: BenchmarkIndependence; title: string }[] = [
     { independence: "vendor", title: "Maker-reported" },
 ];
 
+// A claim the run matches to within half a percent draws no bar, so those
+// rows fold into one line instead of filling the chart with empty tracks.
+const isEven = (ratio: number) => Math.abs(ratio - 1) < 0.005;
+
 function DeltaBars() {
-    const rows = datasheetDeltas(ACTUATORS);
+    const all = datasheetDeltas(ACTUATORS);
+    const rows = all.filter((d) => !isEven(d.ratio));
+    const even = all.filter((d) => isEven(d.ratio));
     const lo = -1;
     const hi = 0.5;
     const pos = (v: number) => ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * 100;
     const zero = pos(0);
+    const row = (d: (typeof all)[number]) => {
+        const m = DELTA_METRICS[d.metric];
+        const r = d.ratio - 1;
+        const tone = d.verdict ? VERDICT_TONE[d.verdict] : "none";
+        const left = Math.min(pos(r), zero);
+        const width = Math.abs(pos(r) - zero);
+        const claim = `${d.bound === "max" ? "max " : ""}${num(d.datasheet)} ${m.unit}`;
+        return <li key={`${runKey(d.run)}-${d.metric}`} data-actuator={d.actuator.id} data-metric={d.metric} data-verdict={d.verdict ?? "none"}>
+            <span className="bm-delta-name"><a href={`/actuators/${d.actuator.id}`}>{d.actuator.name}</a><small>{m.label}</small></span>
+            <div className="bm-track" title={`${num(d.measured)} ${m.unit} measured vs ${claim} datasheet (${d.claimSource})`}>
+                <span className={`bm-bar is-${isEven(d.ratio) ? "even" : tone}`} style={{ left: `${left}%`, width: `${width}%` }} />
+            </div>
+            <span className="bm-mono">{formatRatio(d.ratio)}</span>
+            <span className="bm-verdict">{d.status}</span>
+        </li>;
+    };
+    const zeroVar = { ["--zero" as string]: `${zero}%` };
     return <div className="bm-delta-groups">
         {GROUPS.map((g) => {
             const group = rows.filter((d) => d.run.independence === g.independence);
             if (group.length === 0) return null;
             return <div key={g.independence} className="bm-delta-group" data-independence={g.independence}>
                 <h3>{g.title}</h3>
-                <ol className="bm-delta" style={{ ["--zero" as string]: `${zero}%` }}>
-                    {group.map((d) => {
-                        const m = DELTA_METRICS[d.metric];
-                        const r = d.ratio - 1;
-                        const tone = d.verdict ? VERDICT_TONE[d.verdict] : "none";
-                        const left = Math.min(pos(r), zero);
-                        const width = Math.abs(pos(r) - zero);
-                        const claim = `${d.bound === "max" ? "max " : ""}${num(d.datasheet)} ${m.unit}`;
-                        return <li key={`${runKey(d.run)}-${d.metric}`} data-actuator={d.actuator.id} data-metric={d.metric} data-verdict={d.verdict ?? "none"}>
-                            <span className="bm-delta-name"><a href={`/actuators/${d.actuator.id}`}>{d.actuator.name}</a><small>{m.label}</small></span>
-                            <div className="bm-track" title={`${num(d.measured)} ${m.unit} measured vs ${claim} datasheet (${d.claimSource})`}>
-                                <span className={`bm-bar is-${Math.abs(r) < 0.005 ? "even" : tone}`} style={{ left: `${left}%`, width: `${width}%` }} />
-                            </div>
-                            <span className="bm-mono">{formatRatio(d.ratio)}</span>
-                            <span className="bm-verdict">{d.status}</span>
-                        </li>;
-                    })}
-                </ol>
+                <ol className="bm-delta" style={zeroVar}>{group.map(row)}</ol>
             </div>;
         })}
+        {even.length ? <Fold className="bm-even" title={`${even.length} ${even.length === 1 ? "claim matches" : "claims match"} the datasheet`}>
+            <ol className="bm-delta" style={zeroVar}>{even.map(row)}</ol>
+        </Fold> : null}
     </div>;
 }
 
@@ -199,26 +209,26 @@ export function Benchmarks({ menuOpen = false }: { menuOpen?: boolean }) {
                 </div>
             </header>
 
-            <Section n="01" id="delta" title="Datasheet vs measured" lede="Measured over the datasheet value, grouped by who ran the test. Only independent tests get a verdict; a datasheet maximum is either met or exceeded.">
+            <Section n="01" id="leaderboard" title="Measured leaderboard" lede="Continuous N·m per kg of actuator. Maker data is badged.">
+                <Leaderboard />
+            </Section>
+
+            <Section n="02" id="delta" title="Datasheet vs measured" lede="Measured over claimed. Only independent tests get a verdict.">
                 <DeltaBars />
             </Section>
 
-            <Section n="02" id="curves" title="Torque-speed" lede={`Overlay up to ${MAX_OVERLAY} T-N curves. Bus voltage and method are in the legend; digitised curves carry their reading error.`}>
+            <Section n="03" id="curves" title="Torque-speed" lede={`Overlay up to ${MAX_OVERLAY} T-N curves.`}>
                 <div className="bm-picks" role="group" aria-label="Actuators on the overlay">
                     {CURVE_IDS.map((id) => <button key={id} type="button" aria-pressed={picks.includes(id)} disabled={!picks.includes(id) && picks.length >= MAX_OVERLAY} onClick={() => toggle(id)}>{nameOf(id)}</button>)}
                 </div>
                 <TnChart series={tnSeries} title="Measured torque against speed" />
             </Section>
 
-            <Section n="03" id="thermal" title="Thermal derating" lede="How long each torque holds before the winding limit, as a share of the run's peak. Hollow points on the right held without reaching it. Heat sinks differ: see each run.">
+            <Section n="04" id="thermal" title="Thermal derating" lede="How long each torque holds before the winding limit.">
                 {thermalGroups.map((g, i) => <ThermalChart key={g.map(runKey).join()} series={g.map((run) => ({ label: nameOf(run.actuatorId), run }))} title={`Thermal derating, group ${i + 1}`} />)}
             </Section>
 
-            <Section n="04" id="leaderboard" title="Measured leaderboard" lede="Continuous torque density: the highest torque held 10 minutes or without reaching the limit, per kg. Rows on the maker's own data are badged.">
-                <Leaderboard />
-            </Section>
-
-            <Section n="05" id="runs" title="All runs" lede="Every run with its rig, method, uncertainty and source.">
+            <Section n="05" id="runs" title="All runs" lede="Rig, method, uncertainty and source per run.">
                 <ul className="bm-runs">
                     {BENCHMARK_RUNS.map((r) => <RunCard key={runKey(r)} run={r} open={openRun === runKey(r)} />)}
                 </ul>

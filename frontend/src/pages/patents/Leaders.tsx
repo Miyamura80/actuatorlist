@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
     CAGR_END,
     CAGR_START,
@@ -26,8 +27,13 @@ function AssigneeName({ name, company }: { name: string; company?: string }) {
     return page ? <a href={`${page}?company=${encodeURIComponent(company as string)}`}>{name}</a> : <>{name}</>;
 }
 
+// Rows shown before "Show all"; the rest wait behind one button (TopN style).
+export const LEADERS_SHOWN = 5;
+
 export function Leaders({ scope }: { scope: LandscapeScope }) {
+    const [all, setAll] = useState(false);
     const rows = leaderboard(scope);
+    const shown = all ? rows : rows.slice(0, LEADERS_SHOWN);
     const max = Math.max(1, ...rows.map((r) => r.families));
     return <div className="pt-leaders">
         <div className="pt-stats">
@@ -43,7 +49,7 @@ export function Leaders({ scope }: { scope: LandscapeScope }) {
                     <th scope="col" className="pt-num">Share</th>
                     <th scope="col" className="pt-num" title={`Compound growth of priority-year families, ${CAGR_START} to ${CAGR_END}`}>CAGR {String(CAGR_START).slice(2)}-{String(CAGR_END).slice(2)}</th>
                 </tr></thead>
-                <tbody>{rows.map((r) => <tr key={r.key}>
+                <tbody>{shown.map((r) => <tr key={r.key}>
                     <td className="pt-rank">{r.rank}</td>
                     <td className="pt-who">
                         {r.country !== UNKNOWN_COUNTRY ? <Flag code={r.country} /> : null}
@@ -58,5 +64,8 @@ export function Leaders({ scope }: { scope: LandscapeScope }) {
                 </tr>)}</tbody>
             </table>
         </div>
+        {rows.length > LEADERS_SHOWN ? <button type="button" className="topn-more" aria-expanded={all} onClick={() => setAll((v) => !v)}>
+            {all ? "Show fewer" : `Show all ${rows.length}`}
+        </button> : null}
     </div>;
 }

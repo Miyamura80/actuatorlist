@@ -130,16 +130,37 @@ test("a site abroad picked in the drawer opens its detail; ?company= outside the
     expect(mount().container.querySelector(".mk-drawer")).toBeNull();
 });
 
-test("?cluster= opens the cluster panel listing its members", () => {
+test("?cluster= opens the cluster card in the drawer; a company drills in; Escape steps back up", () => {
     setURL("/japan?cluster=nagano-precision");
     const view = mount();
-    const panel = view.container.querySelector(".cp-cluster") as HTMLElement;
-    expect(panel.querySelector("h2")?.textContent).toContain("Nagano precision belt");
-    const names = [...panel.querySelectorAll("li button")].map((b) => b.textContent);
+    const panel = view.container.querySelector(".mk-drawer") as HTMLElement;
+    expect(panel.querySelector("h3")?.textContent).toContain("Nagano precision belt");
+    const names = [...panel.querySelectorAll(".cp-ccard-name")].map((b) => b.textContent);
     expect(names).toEqual(expect.arrayContaining(["Harmonic Drive Systems", "Seiko Epson", "Sanyo Denki"]));
+    // The table narrows to the cluster's companies.
+    const rows = view.container.querySelectorAll(".cp-companies tbody tr").length;
+    expect(rows).toBe(names.length);
     act(() => { fireEvent.click(within(panel).getByText("Seiko Epson")); });
     expect(readCountryState(window.location.search).company).toBe("seiko-epson");
-    expect(view.container.querySelector(".mk-drawer h3")?.textContent).toBe("Seiko Epson");
+    const drawer = view.container.querySelector(".mk-drawer") as HTMLElement;
+    expect(drawer.querySelector("h3")?.textContent).toBe("Seiko Epson");
+    const crumbs = [...drawer.querySelectorAll(".mk-crumbs button")].map((b) => b.textContent);
+    expect(crumbs).toEqual(["Japan", "Nagano precision belt"]);
+    act(() => { fireEvent.keyDown(window, { key: "Escape" }); });
+    const back = readCountryState(window.location.search);
+    expect(back.company).toBeNull();
+    expect(back.cluster).toBe("nagano-precision");
+    act(() => { fireEvent.keyDown(window, { key: "Escape" }); });
+    expect(window.location.search).toBe("");
+    expect(view.container.querySelector(".mk-drawer")).toBeNull();
+});
+
+test("the country level opens calm: no drawer, no links, the table folded", () => {
+    setURL("/japan");
+    const c = mount().container;
+    expect(c.querySelector(".mk-drawer")).toBeNull();
+    expect(c.querySelectorAll(".mk-arc-line").length).toBe(0);
+    expect((c.querySelector(".cp-companies") as HTMLDetailsElement).open).toBe(false);
 });
 
 test("company table sorts by a column and selects a company", () => {

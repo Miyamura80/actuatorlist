@@ -195,3 +195,38 @@
 }
 .cp-links button i { font-style: normal; font-weight: 500; color: var(--muted); }
 .cp-links button:hover, .cp-links button:focus-visible, .cp-links button.is-active, .cp-links button[aria-pressed="true"] { border-color: var(--cyan); outline: none; }
+
+/* Picture strip: icon, one number, a bar; the "of" and world leader fold. */
+.cp-stage-name { display: inline-flex; align-items: center; gap: 6px; }
+.cp-stage-icon { width: 16px; height: 16px; fill: none; stroke: var(--cyan-dim); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.cp-stage-share { font-size: 28px; }
+.cp-stage-more summary { list-style: none; cursor: pointer; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-stage-more summary::-webkit-details-marker { display: none; }
+.cp-stage-more[open] summary { display: none; }
+.cp-stage-more summary:hover, .cp-stage-more summary:focus-visible { color: var(--cyan); outline: none; }
+.cp-stage-more[open] { display: grid; gap: 6px; }
+
+/* Policies: one line that opens the chips. */
+.cp-policies { display: block; margin-top: 12px; }
+.cp-policies > summary { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; list-style: none; font: 500 12px var(--mono); color: var(--text); }
+.cp-policies > summary::-webkit-details-marker { display: none; }
+.cp-policies > summary::after { content: "\203A"; margin-left: 6px; color: var(--muted); transition: transform 0.15s; }
+.cp-policies[open] > summary::after { transform: rotate(90deg); }
+.cp-policies > summary:hover, .cp-policies > summary:focus-visible { color: var(--cyan); outline: none; }
+.cp-policies-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* Cluster card (drill-down level 1) */
+.cp-ccard { display: grid; gap: 12px; }
+.cp-ccard-blurb { margin: 0; color: var(--muted); line-height: 1.45; }
+.cp-ccard-group h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font: 600 10px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.cp-ccard-group h4 span { margin-left: auto; }
+.cp-ccard-group ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.cp-ccard-group button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px 5px 5px; border: 1px solid var(--line-strong); background: none; color: var(--text); font-size: 12px; cursor: pointer; }
+.cp-ccard-group button:hover, .cp-ccard-group button:focus-visible { border-color: var(--cyan); color: var(--cyan); outline: none; }
+
+/* The company table opens folded at the country level. */
+.cp-companies { margin-top: 20px; }
+.cp-companies .fold-body { padding-left: 0; }
+
+/* The server adds its own footer after the catalog details: keep one. */
+body:has(#catalog-content) .cp-page > .site-footer { display: none; }

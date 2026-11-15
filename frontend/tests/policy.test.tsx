@@ -20,6 +20,17 @@ test("renders seven lanes, one marker per measure and a single call to action", 
     expect(c.querySelectorAll(".pl-cta")).toHaveLength(1);
     expect(c.querySelector(".pl-card")).toBeNull();
     expect(c.querySelector('a[href="/policy/feed.xml"]')).not.toBeNull();
+    expect(c.querySelectorAll(".cta-primary")).toHaveLength(1);
+    // No standing hint; stage and status wait in a closed Filters fold.
+    expect(c.querySelector(".pl-hint")).toBeNull();
+    const filters = c.querySelector("details.pl-more");
+    expect(filters?.hasAttribute("open")).toBe(false);
+    expect(filters?.querySelector(".fold-headline")?.textContent).toBe("none");
+    expect(filters?.querySelector("select")).not.toBeNull();
+    // Latest changes: three rows, then one button for the rest.
+    expect(c.querySelectorAll(".pl-latest-row")).toHaveLength(3);
+    act(() => { fireEvent.click(view.getByRole("button", { name: "Show all 6" })); });
+    expect(c.querySelectorAll(".pl-latest-row")).toHaveLength(6);
 });
 
 test("deep link #measure= opens the card and draws only that bar", () => {
@@ -47,6 +58,7 @@ test("type and status filters narrow the markers and land in the URL", () => {
     expect(window.location.search).toBe("?type=export-control");
     act(() => { fireEvent.click(within(view.getByRole("group", { name: "Status" })).getByRole("button", { name: /Suspended/ })); });
     expect(window.location.search).toBe("?type=export-control&status=suspended");
+    expect(c.querySelector("details.pl-more .fold-headline")?.textContent).toBe("1 active");
     expect(c.querySelectorAll(".pl-marker")).toHaveLength(controls.filter((m) => m.status === "suspended").length);
     act(() => { fireEvent.click(view.getByRole("button", { name: /clear/ })); });
     expect(c.querySelectorAll(".pl-marker")).toHaveLength(POLICY_MEASURES.length);

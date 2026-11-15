@@ -60,6 +60,12 @@ test("opens on the landscape with every node, the ladder and the milestone strip
     expect(c.querySelector(".al-strip .al-ms.is-announced[data-tech]")).not.toBeNull();
     expect(c.querySelector(".al-sp")).toBeNull();
     expect(c.querySelectorAll(".al-cta")).toHaveLength(1);
+    expect(c.querySelectorAll(".cta-primary")).toHaveLength(1);
+    // No standing hint bar; the strip and the method wait in folds.
+    expect(c.querySelector(".al-evidence")).toBeNull();
+    expect(c.querySelector("details.al-fold:not([open]) .al-strip")).not.toBeNull();
+    const folds = [...c.querySelectorAll("details.al-fold .fold-title")].map((e) => e.textContent);
+    expect(folds).toEqual(["Dated milestones", "Method and sources"]);
     expect(c.textContent).not.toContain(String.fromCharCode(0x2014));
 });
 

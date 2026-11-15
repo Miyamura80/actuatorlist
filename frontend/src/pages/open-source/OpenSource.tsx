@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PublicFooter } from "../../components/PublicFooter";
 import { PublicHeader } from "../../components/PublicHeader";
+import { Fold } from "../../components/ui/Fold";
 import {
     EXCLUDED_ROBOTS,
     OPEN_ROBOTS,
@@ -146,9 +147,10 @@ export function OpenSource({ menuOpen = false }: { menuOpen?: boolean }) {
                 </section>
 
                 <section className="os-section" aria-labelledby="os-matrix">
-                    <h2 id="os-matrix">Openness matrix</h2>
-                    <Matrix robots={robots} />
-                    <p className="os-note">Score: full = 1, partial = 1/2, over eight columns. Non-commercial licences count as partial.</p>
+                    <Fold title={<h2 id="os-matrix">Openness matrix</h2>} count={robots.length}>
+                        <Matrix robots={robots} />
+                        <p className="os-note">Score: full = 1, partial = 1/2, over eight columns. Non-commercial licences count as partial.</p>
+                    </Fold>
                 </section>
 
                 <section className="os-section" aria-labelledby="os-scatter">

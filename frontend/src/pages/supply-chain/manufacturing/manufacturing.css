@@ -5,7 +5,12 @@
 .mf-head { display: grid; gap: 4px; }
 .mf-switch { display: inline-flex; gap: 0; margin-top: 10px; border: 1px solid var(--line-strong); width: max-content; }
 .mf-switch button { padding: 5px 12px; border: 0; background: none; color: var(--muted); font: 600 11px/1.2 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
-.mf-switch button[aria-checked="true"] { background: var(--cyan); color: #000; }
+/* A neutral segmented control: the page's one filled CTA lives elsewhere. */
+.mf-switch button + button { border-left: 1px solid var(--line-strong); }
+.mf-switch button[aria-checked="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 -2px 0 var(--text); }
+.mf-switch button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.mf-card-more { margin-top: 4px; }
+.mf-card-more .fold-body { display: grid; gap: 12px; }
 
 .mf-stage { position: relative; margin-top: 20px; border: 1px solid var(--line); background: #000; overflow: hidden; }
 .mf-map { position: relative; width: 100%; touch-action: pan-y; }

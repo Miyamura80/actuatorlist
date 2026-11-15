@@ -4,6 +4,8 @@ import { PublicHeader } from "../../../components/PublicHeader";
 import { FootnotesProvider } from "../../../components/supply-chain/footnotes";
 import { FootnoteRef } from "../../../components/supply-chain/SourcedValue";
 import { SourcesSection } from "../../../components/supply-chain/SourcesSection";
+import { Fold } from "../../../components/ui/Fold";
+import { TopN } from "../../../components/ui/TopN";
 import {
     MEASURE_STATUSES,
     MEASURE_STATUS_LABEL,
@@ -32,6 +34,9 @@ const TITLE = "Policy";
 
 const pushURL = (search: string, hash: string) =>
     window.history.replaceState(window.history.state, "", `${POLICY_PATH}${search}${hash}`);
+
+// The six newest status changes; three show, the rest wait behind a button.
+const LATEST = policyChanges().slice(0, 6);
 
 // Stages any measure touches, in chain order.
 const USED_STAGES = STAGES.filter((s) => POLICY_MEASURES.some((m) => m.stages.includes(s)));
@@ -89,6 +94,9 @@ export function Policy({ menuOpen = false }: { menuOpen?: boolean }) {
         return () => window.removeEventListener("keydown", onKey);
     }, [pick]);
 
+    // Stage and status filters sit in a fold; its summary counts the active ones.
+    const active = (filters.stage ? 1 : 0) + (filters.statuses.length < MEASURE_STATUSES.length ? 1 : 0);
+    const [openFilters] = useState(() => active > 0);
     const typeCount = (t: (typeof MEASURE_TYPES)[number]) => POLICY_MEASURES.filter((m) => m.type === t).length;
     return <div className="tool-page pl-page">
         <PublicHeader path={POLICY_PATH} initialOpen={menuOpen} />
@@ -98,7 +106,7 @@ export function Policy({ menuOpen = false }: { menuOpen?: boolean }) {
                     <p className="tool-kicker">Supply chain · as of {fmtDate(POLICY_AS_OF)}</p>
                     <h1>{TITLE}</h1>
                     <p className="tool-lede">{POLICY_MEASURES.length} government measures on the actuator chain, from rare earth mine to robot.</p>
-                    <a className="pl-cta" href="/api/v1/policy">Get the data</a>
+                    <a className="pl-cta cta-primary" href="/api/v1/policy">Get the data</a>
                 </header>
 
                 <div className="pl-filters">
@@ -111,20 +119,25 @@ export function Policy({ menuOpen = false }: { menuOpen?: boolean }) {
                         </button>)}
                     </div>
                     <div className="pl-row">
-                        <label className="pl-select">
-                            <span>Stage</span>
-                            <select value={filters.stage ?? ""} onChange={(e) => update({ stage: (e.target.value || null) as Stage | null })}>
-                                <option value="">All stages</option>
-                                {USED_STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
-                            </select>
-                        </label>
-                        <div className="pl-statuses" role="group" aria-label="Status">
-                            {MEASURE_STATUSES.map((s) => <button key={s} type="button" aria-pressed={filters.statuses.includes(s)}
-                                onClick={() => update({ statuses: toggle(MEASURE_STATUSES, filters.statuses, s) })}>
-                                <StatusGlyph status={s} />
-                                <span>{MEASURE_STATUS_LABEL[s]}</span>
-                            </button>)}
-                        </div>
+                        <Fold className="pl-more" title="Filters" defaultOpen={openFilters}
+                            headline={active ? `${active} active` : "none"}>
+                            <div className="pl-row">
+                                <label className="pl-select">
+                                    <span>Stage</span>
+                                    <select value={filters.stage ?? ""} onChange={(e) => update({ stage: (e.target.value || null) as Stage | null })}>
+                                        <option value="">All stages</option>
+                                        {USED_STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
+                                    </select>
+                                </label>
+                                <div className="pl-statuses" role="group" aria-label="Status">
+                                    {MEASURE_STATUSES.map((s) => <button key={s} type="button" aria-pressed={filters.statuses.includes(s)}
+                                        onClick={() => update({ statuses: toggle(MEASURE_STATUSES, filters.statuses, s) })}>
+                                        <StatusGlyph status={s} />
+                                        <span>{MEASURE_STATUS_LABEL[s]}</span>
+                                    </button>)}
+                                </div>
+                            </div>
+                        </Fold>
                         {shown.length < POLICY_MEASURES.length
                             ? <button type="button" className="pl-reset" onClick={() => update(ALL_FILTERS)}>
                                 {shown.length} of {POLICY_MEASURES.length} · clear
@@ -136,21 +149,19 @@ export function Policy({ menuOpen = false }: { menuOpen?: boolean }) {
                 <Swimlane measures={shown} today={today} focus={measure ? measure.id : null} onFocus={pick} />
 
                 <div ref={cardRef} className="pl-card-slot" aria-live="polite">
-                    {measure
-                        ? <MeasureCard measure={measure} onClose={() => pick(null)} />
-                        : <p className="pl-hint">Pick a mark to open the measure.</p>}
+                    {measure ? <MeasureCard measure={measure} onClose={() => pick(null)} /> : null}
                 </div>
 
                 <section className="pl-sec" aria-labelledby="pl-latest-h">
                     <h2 id="pl-latest-h">Latest changes <a className="pl-feed" href={POLICY_FEED_PATH} aria-label="Atom feed of status changes"><FeedIcon /></a></h2>
-                    <ol className="pl-latest">
-                        {policyChanges().slice(0, 6).map((c) => <li key={`${c.measure.id}-${c.index}`}>
+                    <div className="pl-latest">
+                        <TopN items={LATEST} n={3} render={(c) => <div key={`${c.measure.id}-${c.index}`} className="pl-latest-row">
                             <span className="pl-mono">{fmtDate(c.date)}</span>
                             <TypeGlyph type={c.measure.type} status={c.status} size={14} />
                             <button type="button" className="pl-link" onClick={() => pick(c.measure.id)}>{c.measure.title}</button>
                             <b className={`pl-status pl-status-${c.status}`}>{MEASURE_STATUS_LABEL[c.status]}</b>
-                        </li>)}
-                    </ol>
+                        </div>} />
+                    </div>
                 </section>
 
                 <details className="pl-list">

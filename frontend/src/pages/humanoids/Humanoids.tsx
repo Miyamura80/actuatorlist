@@ -119,10 +119,12 @@ function Card({ robot, joint, onJoint }: { robot: Humanoid; joint: CanonicalJoin
     );
 }
 
-function Legend() {
+// Only the actuator types the robots on screen actually use.
+function Legend({ robots }: { robots: Humanoid[] }) {
+    const used = new Set(robots.flatMap((r) => r.joints.map((j) => j.actuatorType)));
     return (
         <div className="hm-legend" aria-label="Legend">
-            {ACTUATOR_TYPES.map((t) => (
+            {ACTUATOR_TYPES.filter((t) => used.has(t)).map((t) => (
                 <span key={t}>
                     <i style={{ background: t === "other" ? undefined : ACTUATOR_TYPE_COLOR[t] }} className={t === "other" ? "is-other" : undefined} />
                     {ACTUATOR_TYPE_LABEL[t]}
@@ -184,7 +186,7 @@ export function Humanoids({ menuOpen = false }: { menuOpen?: boolean }) {
                     <Picker label="Robot" value={a.id} onChange={(id) => id && update({ robot: id })} />
                     <Picker label="Compare" value={b?.id ?? null} none="None" exclude={a.id} onChange={(vs) => update({ vs })} />
                 </div>
-                <Legend />
+                <Legend robots={b ? [a, b] : [a]} />
 
                 <section className={`hm-stage${b ? " is-compare" : ""}`} aria-label="Joint map">
                     <Card robot={a} joint={state.joint} onJoint={onJoint} />

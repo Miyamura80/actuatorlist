@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { PublicHeader } from "../components/PublicHeader";
-import { ComparisonHub } from "../components/ComparisonHub";
+import { COMPARE_NOTES, ComparisonHub } from "../components/ComparisonHub";
+import { Fold } from "../components/ui/Fold";
 import { PublicFooter } from "../components/PublicFooter";
 import { ActuatorThumb } from "../components/ActuatorThumb";
 import { EngineeringEvidencePanel } from "../components/EngineeringEvidencePanel";
@@ -36,8 +37,9 @@ export function Compare({ menuOpen = false }: { menuOpen?: boolean }) {
         <PublicHeader path="/compare" initialOpen={menuOpen} />
         <main>
             <h1>Compare actuators</h1>
-            <p>Share this URL. Unknown means not documented, not zero. No winner is implied.</p>
-            {rows.length > 0 && <a href={`/actuators${window.location.search}`}>Change picks in the gallery</a>}
+            {rows.length > 0
+                ? <a href={`/actuators${window.location.search}`}>Change picks in the gallery</a>
+                : <a className="cta-primary compare-cta" href="/actuators">Pick actuators to compare</a>}
             {rows.length === 0 && <ComparisonHub />}
             {rows.length < 2 && <p ref={status} role="status">Pick 2–4 actuators in the gallery. A missing or invalid selection is not compared.</p>}
             <div className="compare-products">
@@ -58,8 +60,10 @@ export function Compare({ menuOpen = false }: { menuOpen?: boolean }) {
                 </table>
             </div>}
             {rows.length >= 2 && <MeasuredOverlay ids={rows.map(a => a.id)} />}
-            {rows.length > 0 && <div className="compare-caveats">{comparisonCaveats(rows).map(note => <p key={note}>{note}</p>)}</div>}
-            <p>Sensor bits are not loaded accuracy. CAD geometry is not a calibrated simulation model. Thermal duty and efficiency require matched operating conditions.</p>
+            {rows.length > 0 && <Fold title="About these numbers" className="compare-caveats">
+                {COMPARE_NOTES.map(note => <p key={note}>{note}</p>)}
+                {comparisonCaveats(rows).map(note => <p key={note}>{note}</p>)}
+            </Fold>}
         </main>
         <PublicFooter />
     </div>;

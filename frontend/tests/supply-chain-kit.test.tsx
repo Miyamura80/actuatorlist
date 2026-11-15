@@ -70,7 +70,14 @@ test("MarketShareList shows cited shares, dashes and Other", () => {
     const fanuc = rows.find((r) => r.textContent?.includes("FANUC"));
     expect(fanuc?.classList.contains("sc-share-none")).toBe(true);
     expect(fanuc?.querySelector(".sc-share-fill")).toBeNull();
-    expect(rows.at(-1)?.textContent).toContain("Other");
+    // Companies with a share, then Other; the rest wait in a closed fold.
+    const front = [...view.container.querySelectorAll(".sc-share > ul > li")];
+    expect(front.at(-1)?.textContent).toContain("Other");
+    expect(front.some((r) => r.classList.contains("sc-share-none"))).toBe(false);
+    const more = view.container.querySelector("details.sc-share-more");
+    expect(more?.hasAttribute("open")).toBe(false);
+    expect(more?.contains(fanuc ?? null)).toBe(true);
+    expect(more?.querySelector(".fold-title")?.textContent).toMatch(/^\d+ more compan(y|ies), no public share$/);
     expect(view.container.querySelector(".sc-share-cap")?.textContent).toContain("Humanoid robot shipments");
 });
 
