@@ -1,3 +1,5 @@
+import { CODE_LICENSE } from "../../../src/repo-link";
+import { GitHubMark, GitHubStar } from "./GitHubMark";
 
 export interface NavItem {
     id: string;
@@ -26,7 +28,11 @@ export function Sidebar({ items, active, onSelect }: Props) {
                     </button>
                 ))}
             </nav>
-
+            <a href={CODE_LICENSE.href} className="open-source-link sidebar-source">
+                <GitHubMark />
+                <GitHubStar />
+                {CODE_LICENSE.label}
+            </a>
         </aside>
     );
 }

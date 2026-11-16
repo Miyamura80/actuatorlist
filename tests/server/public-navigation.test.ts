@@ -21,7 +21,7 @@ test("static and fallback public headers expose native mobile navigation and act
         // Pages linked from the header (or its dropdowns) mark themselves current.
         if (["/", "/robots", "/actuators", "/patents"].includes(path))
             expect(html).toContain(`href="${path}" aria-current="page"`);
-        expect(html).toContain('class="alpha-tag">alpha');
+        expect(html).toContain('class="site-stage">beta');
     }
 });
 
