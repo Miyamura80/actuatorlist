@@ -369,6 +369,9 @@
     z-index: 30;
     display: grid;
     grid-template-columns: auto auto;
+    /* An absolute panel would shrink to the summary's width otherwise. */
+    width: max-content;
+    max-width: calc(100vw - 32px);
     background: #0a0a0a;
     border: 1px solid #383838;
 }
@@ -399,7 +402,7 @@
     display: grid;
 }
 [data-group="market-intel"] .site-sub-links {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, max-content);
 }
 .site-menu .site-sub-panel a,
 .site-sub-soon {
@@ -437,6 +440,8 @@
         border: 0;
         border-top: 1px solid #242424;
         grid-template-columns: minmax(0, 1fr);
+        width: auto;
+        max-width: none;
     }
     .site-sub-links,
     [data-group="market-intel"] .site-sub-links {
