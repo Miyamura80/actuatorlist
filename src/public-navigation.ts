@@ -18,7 +18,17 @@ export const HEADER_ICON_PATHS: Readonly<Record<string, string | undefined>> = {
     "market-intel": "M3 3v18h18M7 15l4-4 4 2 5-7m-4 0h4v4",
     "supply-chain":
         "M9 15l6-6m-4 8-2 2a3.5 3.5 0 0 1-5-5l4-4a3.5 3.5 0 0 1 5 0m0-3 2-2a3.5 3.5 0 0 1 5 5l-4 4a3.5 3.5 0 0 1-5 0",
+    explore: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm3.5 5.5-2 5-5 2 2-5 5-2Z",
+    search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm9 16-4-4",
 };
+
+// Header search: opens the command palette where the app is mounted, and
+// falls back to the catalog list on server-only pages.
+export const SEARCH_LINK = {
+    href: "/actuators?view=list",
+    label: "Search actuators and robots",
+    title: "Search (⌘K)",
+} as const;
 
 export const PUBLIC_LINKS = [
     ["/", "Leaderboard"],
@@ -94,6 +104,8 @@ export interface SupplyChainMenuLink {
 
 export interface HeaderMenuGroup {
     label: string;
+    // Key into HEADER_ICON_PATHS for the group heading.
+    icon?: string;
     links: SupplyChainMenuLink[];
 }
 
@@ -117,52 +129,55 @@ export function supplyChainMenu(
     })).filter((g) => g.links.length > 0);
 }
 
-// Header dropdowns in display order; a menu with no links is dropped.
-// `supplyChainPreview` lists every planned atlas page (/lab/supply-chain).
+// The single "Explore" dropdown: market intel and supply chain, each under
+// one small icon heading. A group with no links is dropped, and so is the
+// menu if both are empty. `supplyChainPreview` lists every planned atlas page
+// (/lab/supply-chain).
 export function headerMenus(supplyChainPreview = false): HeaderMenu[] {
-    const marketIntel = MARKET_INTEL_GROUPS.map((g) => ({
-        label: g.label,
-        links: g.links.map(([href, label]) => ({ href, label, live: true })),
-    }));
-    return [
-        { id: "market-intel", label: "Market intel", groups: marketIntel },
+    const groups: HeaderMenuGroup[] = [
         {
-            id: "supply-chain",
-            label: "Supply chain",
-            groups: supplyChainMenu(supplyChainPreview),
+            label: "Market intel",
+            icon: "market-intel",
+            links: MARKET_INTEL_GROUPS.flatMap((g) =>
+                g.links.map(([href, label]) => ({ href, label, live: true })),
+            ),
         },
-    ].filter((m) => m.groups.length > 0);
+        {
+            label: "Supply chain",
+            icon: "supply-chain",
+            links: supplyChainMenu(supplyChainPreview).flatMap((g) => g.links),
+        },
+    ].filter((g) => g.links.length > 0);
+    return groups.length > 0 ? [{ id: "explore", label: "Explore", groups }] : [];
 }
 
 const liveSupplyChain = supplyChainMenu().flatMap((g) =>
     g.links.map((l) => [l.href, l.label] as const),
 );
 
-export const FOOTER_GROUPS = [
+type FooterGroup = {
+    readonly label: string;
+    readonly links: readonly (readonly [string, string])[];
+};
+
+// The compact footer: three short columns, always visible.
+export const FOOTER_GROUPS: readonly FooterGroup[] = [
     {
         label: "Catalog",
-        links: [...PUBLIC_LINKS, ["/compare", "Compare"]],
-    },
-    // Same links as the header's "Market intel" menu.
-    {
-        label: "Market intel",
-        links: MARKET_INTEL_GROUPS.flatMap(
-            (g): readonly (readonly [string, string])[] => g.links,
-        ),
-    },
-    {
-        label: "Resources",
         links: [
+            ["/actuators", "Actuators"],
+            ["/compare", "Compare"],
             ["/guides", "Engineering guides"],
-            ["/guides/robot-actuator-selection", "Actuator selection"],
-            ["/guides/humanoid-robot-actuators", "Humanoid actuators"],
             ["/tools/motor-torque-calculator", "Motor torque calculator"],
-            ["/tools/robot-arm-torque-calculator", "Arm torque calculator"],
-            ["/comparisons/cubemars-ak80-9-vs-xiaomi-cybergear", "AK80-9 vs CyberGear"],
-            ["/faq", "FAQ"],
+        ],
+    },
+    {
+        label: "Agents",
+        links: [
             ["/agents", "For AI agents"],
-            ["/docs/api", "API documentation"],
             ["/llms.txt", "llms.txt"],
+            ["/mcp", "MCP server"],
+            ["/docs/api", "API documentation"],
         ],
     },
     {
@@ -171,14 +186,52 @@ export const FOOTER_GROUPS = [
             ["/about", "About"],
             ["/contributors", "Contributors"],
             ["/contact", "Contact"],
-            ["/privacy", "Privacy"],
             [REPO_URL, "GitHub"],
         ],
+    },
+];
+
+// Every other page, folded behind "All pages": still real links for crawlers
+// and agents, out of the way for people.
+export const FOOTER_MORE: readonly FooterGroup[] = [
+    {
+        label: "Catalog",
+        links: [
+            ...PUBLIC_LINKS.filter(([href]) => href !== "/actuators"),
+            ["/guides/robot-actuator-selection", "Actuator selection"],
+            ["/guides/humanoid-robot-actuators", "Humanoid actuators"],
+            ["/tools/robot-arm-torque-calculator", "Arm torque calculator"],
+            ["/comparisons/cubemars-ak80-9-vs-xiaomi-cybergear", "AK80-9 vs CyberGear"],
+            ["/faq", "FAQ"],
+        ],
+    },
+    {
+        label: "Market intel",
+        links: MARKET_INTEL_GROUPS.flatMap(
+            (g): readonly (readonly [string, string])[] => g.links,
+        ),
     },
     ...(liveSupplyChain.length > 0
         ? [{ label: "Supply chain", links: liveSupplyChain }]
         : []),
-] as const;
+    {
+        label: "Agents",
+        links: [
+            ["/agents.md", "agents.md"],
+            ["/openapi.json", "OpenAPI spec"],
+        ],
+    },
+    {
+        label: "Project",
+        links: [["/privacy", "Privacy"]],
+    },
+];
+
+// Every footer link, visible or folded.
+export const FOOTER_LINKS: readonly (readonly [string, string])[] = [
+    ...FOOTER_GROUPS,
+    ...FOOTER_MORE,
+].flatMap((g) => g.links);
 
 function headerIcon(item: string): string {
     const icon = HEADER_ICON_PATHS[item];
@@ -189,16 +242,25 @@ function headerIcon(item: string): string {
 
 function menuHtml(menu: HeaderMenu, path: string): string {
     const current = menu.groups.some((g) => g.links.some((l) => l.href === path));
-    return `<details class="site-sub" data-menu="${menu.id}"><summary${current ? ' class="is-current"' : ""}>${headerIcon(menu.id)}${menu.label}</summary><div class="site-sub-panel">${menu.groups.map((g) => `<section><h3>${g.label}</h3>${g.links.map((l) => `<a href="${l.href}"${path === l.href ? ' aria-current="page"' : ""}>${l.label}</a>`).join("")}</section>`).join("")}</div></details>`;
+    return `<details class="site-sub" data-menu="${menu.id}"><summary${current ? ' class="is-current"' : ""}>${headerIcon(menu.id)}${menu.label}</summary><div class="site-sub-panel">${menu.groups.map((g) => `<section${g.icon ? ` data-group="${g.icon}"` : ""}><h3>${g.icon ? headerIcon(g.icon) : ""}${g.label}</h3><div class="site-sub-links">${g.links.map((l) => `<a href="${l.href}"${path === l.href ? ' aria-current="page"' : ""}>${l.label}</a>`).join("")}</div></section>`).join("")}</div></details>`;
+}
+
+function footerLinksHtml(groups: readonly FooterGroup[]): string {
+    return groups
+        .map(
+            (group) =>
+                `<section><h2>${group.label}</h2>${group.links.map(([href, label]) => `<a href="${href}">${isRepoHref(href) ? GITHUB_MARK_SVG : ""}${label}</a>`).join("")}</section>`,
+        )
+        .join("");
 }
 
 export function publicHeader(path: string): string {
     const sourceLink = `<a href="${CODE_LICENSE.href}" class="open-source-link">${GITHUB_MARK_SVG}${GITHUB_STAR_SVG}${CODE_LICENSE.label}</a>`;
-    return `<header class="site-header"><a href="/" class="site-brand" aria-label="actuatorlist home"><span><b>actuator</b>list.com</span><span class="site-stage">beta</span></a>${sourceLink}<details class="site-menu"><summary aria-label="Menu" aria-controls="public-navigation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></summary><nav id="public-navigation" aria-label="Site">${PUBLIC_LINKS.map(([href, label]) => `<a href="${href}"${path === href ? ' aria-current="page"' : ""}>${headerIcon(href)}${label}</a>`).join("")}${headerMenus()
+    return `<header class="site-header"><a href="/" class="site-brand" aria-label="actuatorlist home"><span><b>actuator</b>list.com</span><span class="site-stage">beta</span></a>${sourceLink}<a href="${SEARCH_LINK.href}" class="site-search" aria-label="${SEARCH_LINK.label}" title="${SEARCH_LINK.title}">${headerIcon("search")}</a><details class="site-menu"><summary aria-label="Menu" aria-controls="public-navigation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></summary><nav id="public-navigation" aria-label="Site">${PUBLIC_LINKS.map(([href, label]) => `<a href="${href}"${path === href ? ' aria-current="page"' : ""}>${headerIcon(href)}${label}</a>`).join("")}${headerMenus()
         .map((m) => menuHtml(m, path))
         .join("")}</nav></details></header>`;
 }
 
 export function publicFooter(): string {
-    return `<footer class="site-footer"><nav aria-label="Footer">${FOOTER_GROUPS.map((group) => `<section><h2>${group.label}</h2>${group.links.map(([href, label]) => `<a href="${href}">${isRepoHref(href) ? GITHUB_MARK_SVG : ""}${label}</a>`).join("")}</section>`).join("")}</nav></footer>`;
+    return `<footer class="site-footer"><nav aria-label="Footer">${footerLinksHtml(FOOTER_GROUPS)}<details class="site-footer-more"><summary>All pages</summary><div class="site-footer-more-body">${footerLinksHtml(FOOTER_MORE)}</div></details></nav></footer>`;
 }

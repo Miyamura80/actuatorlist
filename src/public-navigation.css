@@ -93,6 +93,7 @@
 .site-header a:focus-visible,
 .site-menu > summary:focus-visible,
 .open-source-link:focus-visible,
+.site-search:focus-visible,
 .site-footer a:focus-visible {
     outline: 2px solid #91b9ff;
     outline-offset: 3px;
@@ -132,18 +133,80 @@
     color: #fff;
     text-decoration: underline;
 }
-/* Every group sits in one row, not wrapped below. */
-.site-footer > nav:has(> :nth-child(4)) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+/* "All pages": the long tail of links, folded under the three columns. */
+.site-footer-more {
+    grid-column: 1 / -1;
+    border-top: 1px solid #242424;
+    padding-top: 12px;
 }
-.site-footer > nav:has(> :nth-child(5)) {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+.site-footer-more > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    color: #8a8a8a;
+    font-size: 12px;
+    cursor: pointer;
+    list-style: none;
+}
+.site-footer-more > summary::-webkit-details-marker {
+    display: none;
+}
+.site-footer-more > summary::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+}
+.site-footer-more[open] > summary::before {
+    transform: rotate(45deg);
+}
+.site-footer-more > summary:hover {
+    color: #fff;
+}
+.site-footer-more > summary:focus-visible {
+    outline: 2px solid #91b9ff;
+    outline-offset: 3px;
+}
+.site-footer-more-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px 24px;
+    padding-top: 12px;
+}
+.site-footer-more h2 {
+    margin: 0 0 6px;
+    font: 600 10px / 1.6 "JetBrains Mono", ui-monospace, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9ba4a6;
+}
+.site-footer-more a {
+    font-size: 12px;
+    padding: 2px 0;
+}
+/* Header search: an icon that opens the command palette (Cmd/Ctrl+K). */
+.site-search {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #aaa;
+}
+.site-search:hover {
+    background: #242424;
+    color: #fff;
+}
+.site-search .site-nav-icon {
+    width: 18px;
+    height: 18px;
 }
 @media (max-width: 860px) {
-    .site-footer > nav:has(> :nth-child(4)),
-    .site-footer > nav:has(> :nth-child(5)) {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
     .site-header {
         flex-wrap: wrap;
         gap: 8px;
@@ -155,6 +218,11 @@
     .site-header .open-source-link {
         margin-left: auto;
         min-height: 44px;
+    }
+    .site-search {
+        width: 44px;
+        height: 44px;
+        border: 1px solid #444;
     }
     .site-menu {
         margin-left: 0;
@@ -253,7 +321,7 @@
     }
 }
 
-/* Supply chain dropdown: a ruled panel of two groups, square and flat. */
+/* Explore dropdown: a ruled panel of two groups, square and flat. */
 .site-sub {
     position: relative;
 }
@@ -300,7 +368,7 @@
     right: 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(2, minmax(210px, 1fr));
+    grid-template-columns: auto auto;
     background: #0a0a0a;
     border: 1px solid #383838;
 }
@@ -312,12 +380,26 @@
     border-left: 1px solid #242424;
 }
 .site-sub-panel h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin: 0 0 6px;
     padding: 0 11px;
     font: 600 10px / 1.6 "JetBrains Mono", ui-monospace, monospace;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #9ba4a6;
+}
+.site-sub-panel h3 .site-nav-icon {
+    width: 13px;
+    height: 13px;
+}
+/* Market intel has twice the links, so it takes two columns. */
+.site-sub-links {
+    display: grid;
+}
+[data-group="market-intel"] .site-sub-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .site-menu .site-sub-panel a,
 .site-sub-soon {
@@ -355,6 +437,10 @@
         border: 0;
         border-top: 1px solid #242424;
         grid-template-columns: minmax(0, 1fr);
+    }
+    .site-sub-links,
+    [data-group="market-intel"] .site-sub-links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .site-sub-panel section {
         padding: 8px 0;

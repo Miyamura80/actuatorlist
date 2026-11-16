@@ -10,7 +10,7 @@ import { Home } from "../src/pages/Home";
 import { ActuatorsPage } from "../src/pages/actuators/ActuatorsPage";
 import { Agents } from "../src/pages/Agents";
 import { ExplodedView } from "../src/pages/ExplodedView";
-import { FOOTER_GROUPS } from "../../src/public-navigation";
+import { FOOTER_GROUPS, FOOTER_LINKS } from "../../src/public-navigation";
 import { REPO_URL } from "../../src/repo-link";
 
 afterEach(cleanup);
@@ -87,11 +87,29 @@ test("each public SPA surface has exactly one shared grouped footer", () => {
     for (const page of [<App />, <Home />, <ActuatorsPage />, <Agents />]) {
         const view = render(page);
         expect(view.container.querySelectorAll("footer.site-footer")).toHaveLength(1);
-        for (const group of FOOTER_GROUPS) for (const [href, label] of group.links) {
+        for (const [href, label] of FOOTER_LINKS) {
             expect(view.container.querySelector(`footer a[href="${href}"]`)?.textContent).toBe(label);
         }
         cleanup();
     }
+});
+
+test("footer shows at most 12 links; the rest, agent links included, sit in an All pages fold", () => {
+    const view = render(<Home />);
+    const footer = view.container.querySelector("footer.site-footer")!;
+    const visible = footer.querySelectorAll("nav > section a");
+    expect(visible.length).toBe(FOOTER_GROUPS.flatMap((g) => g.links).length);
+    expect(visible.length).toBeLessThanOrEqual(12);
+    const fold = footer.querySelector<HTMLDetailsElement>("details.site-footer-more")!;
+    expect(fold.open).toBe(false);
+    expect(fold.querySelector("summary")?.textContent).toBe("All pages");
+    for (const href of ["/llms.txt", "/mcp", "/docs/api", "/agents.md", "/agents"]) {
+        expect(footer.querySelector(`a[href="${href}"]`)).not.toBeNull();
+    }
+    // No page is linked twice.
+    const hrefs = [...footer.querySelectorAll("a")].map((a) => a.getAttribute("href"));
+    expect(new Set(hrefs).size).toBe(hrefs.length);
+    cleanup();
 });
 
 test("footer GitHub link leads with one decorative GitHub mark", () => {

@@ -6,6 +6,7 @@ import {
     timelineFor,
 } from "../../../../src/sdk";
 import { painPoints } from "../../../../src/sdk/evidence";
+import { TopN } from "../../components/ui/TopN";
 import { EvidenceItem } from "./Evidence";
 
 const W = 640;
@@ -50,17 +51,17 @@ export function SdkTimeline({ brand }: { brand: BrandSummary }) {
 export function SdkPainPoints({ brand }: { brand: BrandSummary }) {
     const pains = painPoints(brand.brand.id);
     if (!pains.length) return <p className="sdk-muted">No recurring complaints found for {brand.brand.name}.</p>;
-    return <ul className="sdk-pains">
-        {pains.map((p) => <li key={`${p.dimension}-${p.theme}`}>
+    return <div className="sdk-pains">
+        <TopN items={pains} n={3} label="All complaints" render={(p) => <div key={`${p.dimension}-${p.theme}`}>
             <details>
                 <summary>
                     <b>{p.theme.replace(/-/g, " ")}</b>
-                    <span>{DIMENSION_SHORT[p.dimension]} · {p.count} post{p.count === 1 ? "" : "s"}</span>
+                    <span>{DIMENSION_SHORT[p.dimension]} · {p.count}</span>
                 </summary>
                 <ol className="sdk-evs">{p.examples.map((e) => <EvidenceItem key={e.id} e={e} />)}</ol>
             </details>
-        </li>)}
-    </ul>;
+        </div>} />
+    </div>;
 }
 
 const MARK = { official: "●", community: "○", none: "" } as const;

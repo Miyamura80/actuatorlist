@@ -6,6 +6,7 @@ import { NodeBadge, type NodeBadgeProps } from "../../../components/flows/NodeBa
 import { ProcessStepChip } from "../../../components/flows/ProcessStepChip";
 import { type GraphNode, SupplyGraph } from "../../../components/flows/SupplyGraph";
 import { type FlowNode, ValueSankey } from "../../../components/flows/ValueSankey";
+import { LazyFold } from "./LazyFold";
 
 const shareOf = (stage: string) => LAB_STAGE_SHARES.find((r) => r.id === stage)?.shares;
 
@@ -58,7 +59,9 @@ export function LabFlows() {
                 ]}
             /> : null}
         </div>
-        <SupplyGraph label="Current supply links between registry companies" nodes={g.nodes} edges={g.edges} />
+        <LazyFold className="sc-lab-sub" title="Company graph" count={g.nodes.length} headline={`${g.edges.length} current supply links`}>
+            <SupplyGraph label="Current supply links between registry companies" nodes={g.nodes} edges={g.edges} />
+        </LazyFold>
         <div className="sc-lab-badges">
             {nd ? <NodeBadge kind="idiot-index" value={nd.multiplier} /> : null}
             <NodeBadge kind="margin" value={LAB_TESLA_MARGIN} />

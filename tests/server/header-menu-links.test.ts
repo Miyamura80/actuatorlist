@@ -17,7 +17,7 @@ test("every header menu link returns 200 and renders the menus", async () => {
         const res = await get(href);
         const html = await res.text();
         if (res.status !== 200) failures.push(`${href}: ${res.status}`);
-        else if (!html.includes('data-menu="market-intel"'))
+        else if (!html.includes('data-menu="explore"'))
             failures.push(`${href}: no menu`);
     }
     expect(failures).toEqual([]);

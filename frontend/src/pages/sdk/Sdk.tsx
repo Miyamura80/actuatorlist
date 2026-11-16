@@ -18,10 +18,12 @@ import {
     sdkLeaderboard,
 } from "../../../../src/sdk";
 import { SDK_EVIDENCE, redditSeedNote } from "../../../../src/sdk/evidence";
-import { SdkCapabilities, SdkPainPoints, SdkTimeline } from "./BrandViews";
-import { EVIDENCE_PANEL_ID, EvidencePanel } from "./Evidence";
+import { Fold } from "../../components/ui/Fold";
+import { SdkCapabilities } from "./BrandViews";
+import { EVIDENCE_PANEL_ID } from "./Evidence";
 import { SdkHeatmap } from "./Heatmap";
 import { SdkLeaderboard } from "./Leaderboard";
+import { SdkProfile } from "./Profile";
 import { SdkRadar } from "./Radar";
 import { type Focus, SLOT_COLORS, readFocus, readPreset, writeState } from "./state";
 import { SdkValueScatter } from "./ValueScatter";
@@ -46,7 +48,6 @@ export function Sdk({ menuOpen = false }: { menuOpen?: boolean }) {
     const [slots, setSlots] = useState<(string | null)[]>(() =>
         SLOT_COLORS.map((_, i) => (i < 3 ? (rows[i]?.brand.id ?? null) : null)));
     const compare = slots.filter((id): id is string => id !== null);
-    const focused = rows.find((r) => r.brand.id === focus.brand) ?? rows[0];
 
     useEffect(() => {
         const prev = document.title;
@@ -64,7 +65,7 @@ export function Sdk({ menuOpen = false }: { menuOpen?: boolean }) {
     useEffect(() => {
         if (!focus.brand) return;
         if (focus.dim) document.getElementById(EVIDENCE_PANEL_ID)?.scrollIntoView?.({ block: "nearest" });
-        else document.getElementById(`sdk-brand-${focus.brand}`)?.scrollIntoView?.({ block: "center" });
+        else document.getElementById(`sdk-brand-${focus.brand}`)?.scrollIntoView?.({ block: "nearest" });
     }, [focus.brand, focus.dim]);
 
     const toggleCompare = (id: string) =>
@@ -74,6 +75,8 @@ export function Sdk({ menuOpen = false }: { menuOpen?: boolean }) {
             return free < 0 ? s : s.map((x, i) => (i === free ? id : x));
         });
     const colorOf = (id: string) => SLOT_COLORS[Math.max(0, slots.indexOf(id))] ?? SLOT_COLORS[0];
+    const toggleOpen = (id: string) =>
+        setFocus((f) => (f.brand === id ? { brand: null, dim: null } : { brand: id, dim: null }));
     const openCell = (brand: string, dim: SdkDimension) =>
         setFocus((f) => (f.brand === brand && f.dim === dim ? { brand, dim: null } : { brand, dim }));
     const compared = compare.map((id) => rows.find((r) => r.brand.id === id)).filter((r) => r !== undefined);
@@ -86,8 +89,8 @@ export function Sdk({ menuOpen = false }: { menuOpen?: boolean }) {
                 <header className="tool-head sdk-head">
                     <p className="tool-kicker">Ecosystem · as of {SDK_AS_OF}</p>
                     <h1>Which actuators have the best SDK?</h1>
-                    <p className="tool-lede">{rows.length} brands scored on seven dimensions from cited checks and {SDK_EVIDENCE.length} developer claims on Reddit, Hacker News and GitHub.</p>
-                    <a className="sdk-cta" href="/api/v1/sdk">Get the data</a>
+                    <p className="tool-lede">{rows.length} brands · 7 dimensions · {SDK_EVIDENCE.length} developer claims</p>
+                    <a className="cta-primary" href="/api/v1/sdk">Get the data</a>
                 </header>
 
                 <div className="sdk-presets" role="group" aria-label="Reader preset">
@@ -99,50 +102,38 @@ export function Sdk({ menuOpen = false }: { menuOpen?: boolean }) {
 
                 <Section id="sdk-board" title="Leaderboard">
                     <SdkLeaderboard rows={rows} compare={compare} toggleCompare={toggleCompare}
-                        focus={(id) => setFocus({ brand: id, dim: null })} />
+                        open={focus.brand} toggleOpen={toggleOpen}
+                        profile={(s) => <SdkProfile brand={s} dim={focus.brand === s.brand.id ? focus.dim : null}
+                            onDim={(d) => openCell(s.brand.id, d)} />} />
                 </Section>
 
-                <Section id="sdk-heat" title="Scores by dimension">
-                    <SdkHeatmap rows={rows} open={focus} onOpen={openCell} />
-                    {focus.brand && focus.dim
-                        ? <EvidencePanel brand={focus.brand} dim={focus.dim} onClose={() => setFocus({ brand: focus.brand, dim: null })} />
-                        : <p className="sdk-muted">Pick a cell to see the checks and posts behind it.</p>}
-                </Section>
+                <div className="sdk-pair">
+                    <Section id="sdk-compare" title="Compare">
+                        <SdkRadar brands={compared} colorOf={colorOf} remove={toggleCompare} clear={() => setSlots(SLOT_COLORS.map(() => null))} />
+                    </Section>
+                    <Section id="sdk-value" title="Score for the money">
+                        <SdkValueScatter rows={rows} focus={(id) => setFocus({ brand: id, dim: null })} />
+                    </Section>
+                </div>
 
-                <Section id="sdk-compare" title="Compare profiles">
-                    <SdkRadar brands={compared} colorOf={colorOf} remove={toggleCompare} clear={() => setSlots(SLOT_COLORS.map(() => null))} />
-                </Section>
-
-                <Section id="sdk-value" title="SDK quality for the money">
-                    <SdkValueScatter rows={rows} focus={(id) => setFocus({ brand: id, dim: null })} />
-                </Section>
-
-                {focused ? <Section id="sdk-focus" title={`${focused.brand.name}: sentiment and pain points`}>
-                    <label className="sdk-select">
-                        <span>Brand</span>
-                        <select value={focused.brand.id} onChange={(e) => setFocus({ brand: e.target.value, dim: null })}>
-                            {rows.map((r) => <option key={r.brand.id} value={r.brand.id}>{r.brand.name}</option>)}
-                        </select>
-                    </label>
-                    <SdkTimeline brand={focused} />
-                    <SdkPainPoints brand={focused} />
-                </Section> : null}
-
-                <Section id="sdk-caps" title="What ships">
-                    <SdkCapabilities rows={rows} />
-                </Section>
-
-                <details className="sdk-method">
-                    <summary>Method and label agreement</summary>
-                    <p>Each dimension blends objective checks (60%, cited) with developer posts (up to 40%, growing with the number of posts, halving in weight every 24 months; a GitHub issue counts 0.35 of a discussion post since trackers collect bug reports), plus a small pull toward 50 so one check cannot pin a score to 0 or 100. A dimension with no data counts as 50 in the overall. Each post was read once ({SDK_METHOD.labelledBy}) and its claims labelled by dimension and polarity and summarised in our words; the labels are committed, no model API runs, and no quotes or usernames are kept. {SDK_METHOD.postsMatched} of {SDK_METHOD.postsScanned} scanned posts named a brand. {redditSeedNote()}</p>
-                    <p>Check set: {SDK_METHOD.gold.items} posts labelled separately ({SDK_METHOD.gold.labelledBy}). Agreement per dimension, with the number of gold claims it rests on; most gold posts make no claim, so a dimension with no gold claims is not measured:</p>
-                    <ul className="sdk-agree">
-                        {agreement.map((a) => <li key={a.dimension}><span>{DIMENSION_SHORT[a.dimension]}</span>{a.goldItems === 0
-                            ? <><b>n/a</b><small>0 gold claims</small></>
-                            : <><b>{Math.round(a.agreement * 100)}%</b><small>{a.goldItems} gold claim{a.goldItems === 1 ? "" : "s"}, overlap {Math.round(a.overlap * 100)}%</small></>}</li>)}
-                    </ul>
-                    <p>Not scored: {UNSCORED_BRANDS.map((b) => b.name).join(", ")} (reducers or bare motors with no software of their own).</p>
-                </details>
+                <div className="sdk-folds">
+                    <Fold title="Scores by dimension" headline={`${rows.length} × ${SDK_DIMENSIONS.length}`}>
+                        <SdkHeatmap rows={rows} open={focus} onOpen={openCell} />
+                    </Fold>
+                    <Fold title="What ships" headline="● maker · ○ community">
+                        <SdkCapabilities rows={rows} />
+                    </Fold>
+                    <Fold title="Method" headline="60% checks · ≤40% posts">
+                        <p>Each dimension blends objective checks (60%, cited) with developer posts (up to 40%, growing with the number of posts, halving in weight every 24 months; a GitHub issue counts 0.35 of a discussion post since trackers collect bug reports), plus a small pull toward 50 so one check cannot pin a score to 0 or 100. A dimension with no data counts as 50 in the overall and on the radar. Each post was read once ({SDK_METHOD.labelledBy}) and its claims labelled by dimension and polarity and summarised in our words; the labels are committed, no model API runs, and no quotes or usernames are kept. {SDK_METHOD.postsMatched} of {SDK_METHOD.postsScanned} scanned posts named a brand. {redditSeedNote()}</p>
+                        <p>Label agreement against {SDK_METHOD.gold.items} separately labelled posts ({SDK_METHOD.gold.labelledBy}); n/a where no gold post makes a claim:</p>
+                        <ul className="sdk-agree">
+                            {agreement.map((a) => <li key={a.dimension}><span>{DIMENSION_SHORT[a.dimension]}</span>{a.goldItems === 0
+                                ? <><b>n/a</b><small>0 gold claims</small></>
+                                : <><b>{Math.round(a.agreement * 100)}%</b><small>{a.goldItems} gold claim{a.goldItems === 1 ? "" : "s"}, overlap {Math.round(a.overlap * 100)}%</small></>}</li>)}
+                        </ul>
+                        <p>Not scored: {UNSCORED_BRANDS.map((b) => b.name).join(", ")} (reducers or bare motors with no software of their own).</p>
+                    </Fold>
+                </div>
 
                 <SourcesSection />
             </main>

@@ -2,24 +2,15 @@
    BRAND.md; shade carries the score, colour only marks compare slots. */
 
 .sdk-head { position: relative; }
-.sdk-cta {
-    display: inline-block;
-    margin-top: 14px;
-    padding: 8px 14px;
-    background: var(--cyan);
-    color: var(--black);
-    font: 600 12px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    text-decoration: none;
-}
-.sdk-cta:focus-visible, .sdk-page button:focus-visible, .sdk-page a:focus-visible, .sdk-select select:focus-visible {
+.sdk-head .cta-primary { margin-top: 14px; }
+.sdk-page button:focus-visible, .sdk-page a:focus-visible, .sdk-select select:focus-visible {
     outline: 2px solid var(--cyan);
     outline-offset: 2px;
 }
 .sdk-muted { color: var(--muted); font-size: 14px; }
-.sdk-sec { padding: 26px 0 6px; border-top: 1px solid var(--line); margin-top: 18px; }
-.sdk-sec h2 { margin: 0 0 14px; font-size: 18px; }
+.sdk-sec { padding: 18px 0 4px; border-top: 1px solid var(--line); margin-top: 14px; }
+.sdk-pair .sdk-sec { min-width: 0; }
+.sdk-sec h2 { margin: 0 0 10px; font-size: 16px; }
 
 /* Presets */
 .sdk-presets { display: flex; flex-wrap: wrap; border: 1px solid var(--line-strong); margin-top: 18px; }
@@ -40,7 +31,7 @@
 
 /* Leaderboard */
 .sdk-board { list-style: none; margin: 0; padding: 0; }
-.sdk-board li {
+.sdk-row {
     display: grid;
     grid-template-columns: 2.2em minmax(8em, 13em) 1fr 2.6em 6.5em 2.2em;
     align-items: center;
@@ -49,8 +40,41 @@
     border-bottom: 1px solid var(--line);
 }
 .sdk-rank { font: 600 12px var(--mono); color: var(--muted); text-align: right; }
-.sdk-name { all: unset; cursor: pointer; font-weight: 600; }
-.sdk-name:hover { color: var(--cyan); }
+.sdk-name { all: unset; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; min-height: 32px; }
+.sdk-name:hover, .sdk-name[aria-expanded="true"] { color: var(--cyan); }
+.sdk-chev { color: var(--muted); flex: none; transition: transform 0.18s ease; }
+.sdk-name[aria-expanded="true"] .sdk-chev { transform: rotate(90deg); }
+.sdk-entry.is-open { background: var(--panel); }
+
+/* Inline brand profile */
+.sdk-profile { padding: 12px 14px 16px 3.2em; border-bottom: 1px solid var(--line); }
+.sdk-profile-top { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.sdk-dims { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.sdk-dim {
+    all: unset;
+    box-sizing: border-box;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 7.5em 1fr 2.2em;
+    white-space: nowrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    padding: 0 6px;
+    font: 12px var(--mono);
+    color: var(--muted);
+    cursor: pointer;
+}
+.sdk-dim b { color: var(--text); text-align: right; }
+.sdk-dim:hover, .sdk-dim.is-open { color: var(--text); background: var(--line); }
+.sdk-dim .sdk-bar { height: 6px; }
+.sdk-profile-side { display: grid; gap: 10px; }
+.sdk-capchips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sdk-capchips li { padding: 3px 8px; border: 1px solid var(--line-strong); font: 11px var(--mono); }
+.sdk-capchips li.sdk-cap-none { color: var(--muted); opacity: 0.55; border-color: var(--line); }
+.sdk-capchips li.sdk-cap-official span { color: var(--cyan); }
+.sdk-capchips .sdk-price { border-color: var(--cyan); color: var(--cyan); }
+.sdk-profile .sdk-timeline svg { max-height: 110px; }
 .sdk-bar { height: 8px; background: var(--line); }
 .sdk-bar span { display: block; height: 100%; background: var(--cyan); }
 .sdk-score { font: 600 14px var(--mono); text-align: right; }
@@ -119,7 +143,18 @@
 .sdk-radar-ring { fill: none; stroke: var(--line); }
 .sdk-radar-axis { stroke: var(--line); }
 .sdk-radar-shape { fill-opacity: 0.12; stroke-width: 1.6; }
-.sdk-tray { position: static; }
+.sdk-tray { position: static; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; font: 12px var(--mono); color: var(--muted); }
+.sdk-tray button { min-height: 32px; min-width: 32px; padding: 4px 8px; border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; }
+.sdk-tray button:hover { color: var(--text); }
+.sdk-tray li { color: var(--text); }
+
+/* Radar and scatter side by side; dense blocks folded below */
+.sdk-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 28px; }
+.sdk-pair .sdk-radar { grid-template-columns: 1fr; gap: 8px; }
+.sdk-pair .sdk-radar svg { max-height: 260px; }
+.sdk-folds { margin-top: 22px; }
+.sdk-folds .fold:last-child { border-bottom: 1px solid var(--line); }
+.sdk-folds .fold-body p { color: var(--muted); font-size: 14px; }
 .sdk-swatch { display: inline-block; width: 10px; height: 10px; margin-right: 6px; }
 
 /* Scatter and timeline */
@@ -141,15 +176,13 @@
 .sdk-select select { min-height: 34px; padding: 0 10px; border: 0; background: transparent; color: var(--text); font: 13px var(--sans); }
 
 /* Pain points */
-.sdk-pains { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.sdk-pains { margin: 12px 0 0; display: grid; gap: 2px; }
 .sdk-pains summary { display: flex; justify-content: space-between; gap: 10px; cursor: pointer; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.sdk-pains summary b { text-transform: capitalize; }
+.sdk-pains summary b { text-transform: capitalize; font-size: 14px; font-weight: 600; }
 .sdk-pains summary span { font: 12px var(--mono); color: var(--muted); }
 .sdk-pains .sdk-evs { padding: 10px 0; }
 
 /* Method */
-.sdk-method { margin: 26px 0 10px; border-top: 1px solid var(--line); padding-top: 14px; color: var(--muted); font-size: 14px; }
-.sdk-method summary { cursor: pointer; color: var(--text); font-weight: 600; }
 .sdk-agree { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
 .sdk-agree li { display: grid; border: 1px solid var(--line); padding: 6px 8px; }
 .sdk-agree b { color: var(--text); font: 600 16px var(--mono); }
@@ -171,8 +204,10 @@
 .sdk-badge:hover { border-color: var(--cyan); }
 
 @media (max-width: 640px) {
-    .sdk-board li { grid-template-columns: 1.6em minmax(0, 1fr) 2.4em 2.2em; }
-    .sdk-bar, .sdk-conf { display: none; }
+    .sdk-row { grid-template-columns: 1.6em minmax(0, 1fr) 2.4em 2.2em; }
+    .sdk-row .sdk-bar, .sdk-conf { display: none; }
+    .sdk-profile { padding-left: 10px; }
+    .sdk-profile-top, .sdk-pair { grid-template-columns: 1fr; }
     .sdk-radar { grid-template-columns: 1fr; }
     .sdk-presets button { flex-basis: 50%; }
     .sdk-presets button + button { border-left: 0; }

@@ -16,6 +16,7 @@ import type { MapTopology } from "../../../components/maps/geo";
 import { PinLegend } from "../../../components/maps/Pins";
 import { useMapSelection } from "../../../components/maps/use-map-selection";
 import { WorldMap } from "../../../components/maps/WorldMap";
+import { LazyFold } from "./LazyFold";
 
 type Origin = "world" | Admin1Country;
 
@@ -78,6 +79,8 @@ export function LabMaps({ topologies }: { topologies?: Partial<Record<string, Ma
             {drawer("world")}
         </div>
         <PinLegend />
+        <LazyFold className="sc-lab-sub" title="Country maps" count={ADMIN1_COUNTRIES.length}
+            headline={ADMIN1_COUNTRIES.map((code) => countryName(code)).join(", ")}>
         <div className="sc-lab-countries">
             {ADMIN1_COUNTRIES.map((code) => [code, pins.filter((p) => p.country === code)] as const).map(([code, here]) => <section key={code} className="sc-lab-mapwrap" aria-label={countryName(code)}>
                 <h3><Flag code={code} decorative /> {countryName(code)}</h3>
@@ -96,5 +99,6 @@ export function LabMaps({ topologies }: { topologies?: Partial<Record<string, Ma
                 {drawer(code)}
             </section>)}
         </div>
+        </LazyFold>
     </>;
 }

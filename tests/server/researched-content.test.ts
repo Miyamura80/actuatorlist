@@ -36,6 +36,8 @@ test("all root-relative editorial links and images resolve through the real serv
             .transform(html);
     }
     expect(targets.size).toBeGreaterThan(10);
+    // The footer's MCP endpoint answers POST only; its own tests cover it.
+    targets.delete("/mcp");
     for (const target of targets) {
         expect(await targetStatus(target), target).toBe(200);
     }

@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
-import { PUBLIC_LINKS, headerMenus } from "../../../src/public-navigation";
+import { PUBLIC_LINKS, SEARCH_LINK, headerMenus } from "../../../src/public-navigation";
 import { CODE_LICENSE } from "../../../src/repo-link";
 import { BrandMark } from "./BrandMark";
 import { GitHubMark, GitHubStar } from "./GitHubMark";
 import { HeaderIcon } from "./nav/HeaderIcon";
 import { HeaderMenu } from "./nav/HeaderMenu";
+import { openCommandPalette } from "../lib/command-palette";
 
 export function PublicHeader({ path, initialOpen = false, supplyChainPreview = false }: { path: string; initialOpen?: boolean; supplyChainPreview?: boolean }) {
     const ref = useRef<HTMLDetailsElement>(null);
@@ -25,6 +26,10 @@ export function PublicHeader({ path, initialOpen = false, supplyChainPreview = f
             <span><b>actuator</b>list.com</span><span className="site-stage">beta</span>
         </a>
         <a href={CODE_LICENSE.href} className="open-source-link"><GitHubMark /><GitHubStar />{CODE_LICENSE.label}</a>
+        <a href={SEARCH_LINK.href} className="site-search" aria-label={SEARCH_LINK.label} title={SEARCH_LINK.title}
+            onClick={(event) => { if (openCommandPalette()) event.preventDefault(); }}>
+            <HeaderIcon item="search" />
+        </a>
         <details className="site-menu" open={initialOpen} ref={ref} onKeyDown={(event) => {
             if (event.key === "Escape" && event.currentTarget.open) {
                 event.currentTarget.open = false;

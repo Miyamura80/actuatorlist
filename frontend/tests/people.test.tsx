@@ -5,6 +5,7 @@ import { mountApp } from "../src/startup";
 import { People } from "../src/pages/people/People";
 import { DIRECTORY, ORGS } from "../../src/people";
 import { orgLogoUrl } from "../../src/people/views";
+import { shortName } from "../src/pages/people/labels";
 
 afterEach(cleanup);
 
@@ -124,4 +125,59 @@ test("the domain filter dims people outside it", () => {
     fireEvent.click(magnets);
     const lit = view.container.querySelectorAll(".pp-net a.pp-person:not(.is-dim)");
     expect(lit).toHaveLength(DIRECTORY.filter((p) => p.domain === "magnets").length);
+});
+
+test("hub nodes are always named; other names appear on hover or focus", () => {
+    setUrl("http://localhost:1/people");
+    const view = render(<People />);
+    const shown = () => [...view.container.querySelectorAll(".pp-labels .pp-label")].map((t) => t.textContent);
+    expect(shown()).toContain("Sangbae Kim");
+    expect(shown()).toContain("MIT");
+    // Someone with one affiliation is unnamed until hovered or focused.
+    const quiet = DIRECTORY.find((p) => !p.alsoOrgIds?.length && !shown().includes(shortName(p.name)))!;
+    const node = view.container.querySelector(`.pp-net a[href="?p=${quiet.id}"]`)!;
+    fireEvent.mouseEnter(node);
+    expect(shown()).toContain(shortName(quiet.name));
+    fireEvent.mouseLeave(node);
+    expect(shown()).not.toContain(shortName(quiet.name));
+    fireEvent.focus(node);
+    expect(shown()).toContain(shortName(quiet.name));
+});
+
+test("people without a photo get a domain-coloured disc with initials", () => {
+    setUrl("http://localhost:1/people");
+    const view = render(<People />);
+    const node = view.container.querySelector('.pp-net a[href="?p=hugh-herr"]')!;
+    expect(node.classList.contains("pp-research")).toBe(true);
+    expect(node.querySelector("circle.pp-av")).not.toBeNull();
+    expect(node.querySelector("text")?.textContent).toBe("HH");
+});
+
+test("clicking a node focuses it: neighbours lit and named, the rest dimmed, details folded in a card", () => {
+    setUrl("http://localhost:1/people");
+    const view = render(<People />);
+    const node = view.container.querySelector('.pp-net a[href="?p=sangbae-kim"]')!;
+    fireEvent.click(node);
+    expect(node.classList.contains("is-on")).toBe(true);
+    const sk = DIRECTORY.find((p) => p.id === "sangbae-kim")!;
+    for (const org of [sk.orgId, ...(sk.alsoOrgIds ?? [])]) {
+        const n = view.container.querySelector(`.pp-net a[href="?org=${org}"]`)!;
+        expect(n.classList.contains("is-dim")).toBe(false);
+        expect([...view.container.querySelectorAll(".pp-labels .pp-label")].map((t) => t.textContent)).toContain(ORGS[org].name);
+    }
+    expect(view.container.querySelector('.pp-net a[href="?p=hugh-herr"]')?.classList.contains("is-dim")).toBe(true);
+    const card = view.container.querySelector(".pp-panel")!;
+    const folds = [...card.querySelectorAll("details.fold")];
+    expect(folds.map((f) => f.querySelector(".fold-title")?.textContent)).toContain("Key works");
+    expect(folds.every((f) => !f.hasAttribute("open"))).toBe(true);
+    // Clicking the focused node again clears the focus.
+    fireEvent.click(node);
+    expect(view.container.querySelector(".pp-panel")).toBeNull();
+    expect(view.container.querySelectorAll(".pp-net .is-dim")).toHaveLength(0);
+});
+
+test("short names keep labels compact", () => {
+    expect(shortName("Sangbae Kim")).toBe("Sangbae Kim");
+    expect(shortName("Christoph Keplinger")).toBe("C. Keplinger");
+    expect(shortName("Oh Jun-ho (Jun Ho Oh)")).toBe("Oh Jun-ho");
 });

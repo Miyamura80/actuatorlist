@@ -134,6 +134,8 @@ describe("supply-chain cross-links", () => {
     test("every internal href and deep link resolves to a real route and record", async () => {
         const links = await allLinks();
         expect(links.size).toBeGreaterThan(100);
+        // The footer's MCP endpoint answers POST only; its own tests cover it.
+        links.delete("/mcp");
         const errors: string[] = [];
         const checked = new Map<string, number>();
         for (const href of links) {

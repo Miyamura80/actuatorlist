@@ -12,21 +12,64 @@ const setURL = (path: string) =>
 
 afterEach(cleanup);
 
-test("renders all seven views with one row per scored brand", () => {
+test("renders every view, with the top five leaderboard rows up front", () => {
     setURL("/sdk");
     const view = render(<Sdk />);
     const c = view.container;
     expect(view.getByRole("heading", { level: 1 }).textContent).toBe("Which actuators have the best SDK?");
-    expect(c.querySelectorAll(".sdk-board li")).toHaveLength(SCORED_BRANDS.length);
+    expect(c.querySelectorAll(".sdk-board .sdk-entry")).toHaveLength(Math.min(5, SCORED_BRANDS.length));
     expect(c.querySelectorAll(".sdk-heat tbody tr")).toHaveLength(SCORED_BRANDS.length);
     expect(c.querySelectorAll(".sdk-cell")).toHaveLength(SCORED_BRANDS.length * SDK_DIMENSIONS.length);
     expect(c.querySelectorAll(".sdk-radar-shape")).toHaveLength(3);
     expect(c.querySelector(".sdk-scatter")).not.toBeNull();
-    const focusSection = c.querySelector("#sdk-focus-h")?.closest("section");
-    expect(focusSection?.querySelector(".sdk-timeline")).not.toBeNull();
     expect(c.querySelectorAll(".sdk-caps tbody tr")).toHaveLength(SCORED_BRANDS.length);
-    expect(c.querySelector(".sdk-method")).not.toBeNull();
-    expect(c.querySelectorAll(".sdk-cta")).toHaveLength(1);
+    // Dense blocks sit in closed folds; nothing is expanded on arrival.
+    expect([...c.querySelectorAll<HTMLDetailsElement>(".sdk-folds details.fold")].map((d) => d.open)).toEqual([false, false, false]);
+    expect(c.querySelector(".sdk-profile")).toBeNull();
+    expect(c.querySelectorAll("main .cta-primary")).toHaveLength(1);
+});
+
+test("Show all reveals every ranked brand", () => {
+    setURL("/sdk");
+    const view = render(<Sdk />);
+    const c = view.container;
+    const more = view.getByRole("button", { name: `Show all ${SCORED_BRANDS.length}` });
+    expect(more.getAttribute("aria-expanded")).toBe("false");
+    act(() => { fireEvent.click(more); });
+    expect(c.querySelectorAll(".sdk-board .sdk-entry")).toHaveLength(SCORED_BRANDS.length);
+    expect(view.getByRole("button", { name: "Show fewer" }).getAttribute("aria-expanded")).toBe("true");
+});
+
+test("clicking a brand opens its profile inline and in the URL; clicking again closes it", () => {
+    setURL("/sdk");
+    const view = render(<Sdk />);
+    const c = view.container;
+    const top = sdkLeaderboard()[0];
+    if (!top) throw new Error("no brands");
+    const name = () => within(c.querySelector(".sdk-board") as HTMLElement).getByRole("button", { name: top.brand.name });
+    expect(name().getAttribute("aria-expanded")).toBe("false");
+    act(() => { fireEvent.click(name()); });
+    expect(name().getAttribute("aria-expanded")).toBe("true");
+    const profile = c.querySelector(`#sdk-brand-${top.brand.id} .sdk-profile`);
+    expect(profile?.id).toBe(name().getAttribute("aria-controls") ?? "missing");
+    expect(profile?.querySelectorAll(".sdk-dim")).toHaveLength(SDK_DIMENSIONS.length);
+    expect(profile?.querySelector(".sdk-timeline, .sdk-muted")).not.toBeNull();
+    expect(window.location.hash).toBe(`#brand=${top.brand.id}`);
+    // A dimension bar opens its evidence inside the profile.
+    act(() => { fireEvent.click(within(profile as HTMLElement).getByRole("button", { name: /^Docs and examples:/ })); });
+    expect(profile?.querySelector(".sdk-panel")?.getAttribute("data-dim")).toBe("docs");
+    expect(window.location.hash).toBe(`#brand=${top.brand.id}&dim=docs`);
+    act(() => { fireEvent.click(name()); });
+    expect(c.querySelector(".sdk-profile")).toBeNull();
+    expect(window.location.hash).toBe("");
+});
+
+test("a deep link to a brand below the top five opens it without Show all", () => {
+    const last = sdkLeaderboard().at(-1);
+    if (!last) throw new Error("no brands");
+    setURL(`/sdk#brand=${last.brand.id}`);
+    const view = render(<Sdk />);
+    expect(view.container.querySelector(`#sdk-brand-${last.brand.id} .sdk-profile`)).not.toBeNull();
 });
 
 test("a heatmap cell drills down to cited checks and linked posts, and lands in the URL", () => {
@@ -55,6 +98,7 @@ test("presets re-rank the leaderboard and write ?preset=", () => {
     const view = render(<Sdk />);
     act(() => { fireEvent.click(within(view.getByRole("group", { name: "Reader preset" })).getByRole("button", { name: "ROS 2 shop" })); });
     expect(window.location.search).toBe("?preset=ros2");
+    act(() => { fireEvent.click(view.getByRole("button", { name: /^Show all/ })); });
     const names = [...view.container.querySelectorAll(".sdk-board .sdk-name")].map((n) => n.textContent);
     expect(names).toEqual(sdkLeaderboard("ros2").map((s) => s.brand.name));
 });
