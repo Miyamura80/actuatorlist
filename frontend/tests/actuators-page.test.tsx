@@ -142,7 +142,7 @@ test("popstate restores view, filters, detail and comparison without history wri
         expect(checkedIds()).toEqual([ids[2]]);
         expect((view.getByPlaceholderText("Search actuators, brands...") as HTMLInputElement).value).toBe(ACTUATORS[2].name);
         expect(view.container.querySelector(".drawer")).not.toBeNull();
-        expect(view.getByRole("button", { name: /^Compare$/ }).hasAttribute("disabled")).toBe(true);
+        expect(view.queryByRole("link", { name: "Compare selected actuators" })).toBeNull();
         const target = window.location.href;
         act(() => window.dispatchEvent(new PopStateEvent("popstate")));
         expect(window.location.href).toBe(target);
@@ -209,4 +209,42 @@ test("the filters popover writes country choices to the URL and shows them as re
     expect(view.container.querySelector('[aria-label="Country filter"]')).toBeNull();
     fireEvent.click(view.getByRole("button", { name: `Clear filter: ${country}` }));
     expect(params().has("country")).toBe(false);
+});
+
+test("each gallery section shows its first row, then a Show all button that expands it", () => {
+    setURL("/actuators");
+    const view = render(<ActuatorsPage />);
+    // Every card stays in the DOM for prerender and SEO; extras are folded by CSS.
+    expect(view.container.querySelectorAll("a.bento-card")).toHaveLength(ACTUATORS.length);
+    const section = [...view.container.querySelectorAll(".gallery-section")].find(s => s.querySelector("[data-extra]"))!;
+    const grid = section.querySelector(".bento")!;
+    const more = section.querySelector<HTMLButtonElement>("button.gallery-more")!;
+    const total = grid.querySelectorAll(".bento-pick").length;
+    expect(more.textContent).toBe(`Show all ${total}`);
+    expect(more.getAttribute("aria-expanded")).toBe("false");
+    expect(more.getAttribute("aria-controls")).toBe(grid.id);
+    expect(grid.getAttribute("data-collapsed")).toBe("true");
+    fireEvent.click(more);
+    expect(more.getAttribute("aria-expanded")).toBe("true");
+    expect(grid.getAttribute("data-collapsed")).toBe("false");
+    // Cards carry one big stat and no hover-only copy or use chips.
+    expect(view.container.querySelector(".bento-go, .use-chip")).toBeNull();
+    expect(view.container.querySelector(".pick-control")?.textContent).toBe("");
+});
+
+test("a search shows every match without a Show all button", () => {
+    setURL(`/actuators?q=${encodeURIComponent(ACTUATORS[0].brand)}`);
+    const view = render(<ActuatorsPage />);
+    expect(view.container.querySelector("button.gallery-more")).toBeNull();
+    expect(view.container.querySelector('.bento[data-collapsed="true"]')).toBeNull();
+});
+
+test("Group by lives in the filter panel", () => {
+    setURL("/actuators");
+    const view = render(<ActuatorsPage />);
+    expect(view.queryByRole("group", { name: "Group actuators by" })).toBeNull();
+    fireEvent.click(view.getByRole("button", { name: "Filters" }));
+    const group = view.getByRole("group", { name: "Group actuators by" });
+    fireEvent.click(group.querySelectorAll("button")[1]!);
+    expect(params().get("by")).toBe("application");
 });

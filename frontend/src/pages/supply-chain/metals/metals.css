@@ -2,19 +2,12 @@
    thin rules, numbers in mono. */
 
 .mt-head { position: relative; }
+/* The one CTA: .cta-primary gives the look, this only places it. */
 .mt-cta {
     position: absolute;
     right: 0;
     bottom: 20px;
-    padding: 8px 14px;
-    background: var(--cyan);
-    color: var(--black);
-    font: 600 12px/1 var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    text-decoration: none;
 }
-.mt-cta:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 .mt-sec { padding-top: 32px; }
 .mt-sec > h2 {
@@ -178,10 +171,41 @@
 
 /* 05 Market */
 .mt-flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); counter-reset: none; }
-.mt-flow li { display: grid; align-content: start; gap: 6px; padding: 12px 14px; font-size: 12px; color: var(--muted); }
+.mt-flow li { padding: 10px 12px; font-size: 12px; color: var(--muted); }
 .mt-flow li + li { border-left: 1px solid var(--line); }
-.mt-flow b { color: var(--text); font-size: 13px; }
-.mt-flow-n { font: 600 11px var(--mono); color: var(--cyan); }
+.mt-flow summary { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; }
+.mt-flow summary::-webkit-details-marker { display: none; }
+.mt-flow summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.mt-flow b { color: var(--text); font-size: 13px; font-weight: 600; }
+.mt-flow-n {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--cyan-dim);
+    border-radius: 50%;
+    font: 600 11px var(--mono);
+    color: var(--cyan);
+}
+.mt-flow details[open] .mt-flow-n { background: var(--cyan); color: var(--black); }
+.mt-flow details p { margin: 8px 0 0; line-height: 1.45; }
+.mt-picked {
+    display: inline-grid;
+    place-items: center;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--text);
+    font: 600 13px var(--mono);
+    color: var(--text);
+    text-decoration: none;
+}
+.mt-picked:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.mt-grade-use { margin-top: 8px; }
+.mt-grade-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font: 11px/1.4 var(--mono); color: var(--muted); }
+.mt-grade-list b { display: inline-block; min-width: 3em; color: var(--text); }
+.mt-grade-list li.is-on { color: var(--text); }
 .mt-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 20px; border: 1px solid var(--line); }
 .mt-players > section { padding: 16px 20px 18px; min-width: 0; }
 .mt-players > section + section { border-left: 1px solid var(--line); }
@@ -222,7 +246,7 @@
     .mt-stages.is-chain > :nth-child(n + 3) { border-top: 1px solid var(--line); }
 }
 @media (max-width: 720px) {
-    .mt-cta { position: static; display: inline-block; margin-top: 14px; }
+    .mt-cta { position: static; display: inline-flex; margin-top: 14px; }
     .mt-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .mt-tile:nth-child(4) { border-left: 0; }
     .mt-tile:nth-child(n + 4) { border-top: 1px solid var(--line); }

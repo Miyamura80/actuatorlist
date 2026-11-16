@@ -6,8 +6,9 @@ import { SUPPLY_CHAIN_PAGES_LIVE } from "../../../../../src/public-navigation";
 import { MarketShareList } from "../../../components/supply-chain/MarketShareList";
 import { FootnoteRef } from "../../../components/supply-chain/SourcedValue";
 
-// 5. Who controls the market and what moves it: how a price is made, the
-// companies at each end of the chain, and one card per driver.
+// 5. Who controls the market and what moves it: how a price is made as six
+// numbered steps (detail on click), the companies at each end of the chain,
+// and one card per driver.
 
 const SEGMENTS = ["ree-mining-refining", "magnets-motors"] as const;
 
@@ -24,10 +25,14 @@ function Arrow({ dir }: { dir: DriverDirection }) {
 export function Market() {
     return <div className="mt-market">
         <ol className="mt-flow" aria-label="How a price is made">
-            {PRICE_CHAIN.map((s, i) => <li key={s.id}>
-                <span className="mt-flow-n" aria-hidden="true">{i + 1}</span>
-                <b>{s.label}</b>
-                <span>{s.detail}<FootnoteRef sources={s.sources} asOf="2026" confidence="reported" /></span>
+            {PRICE_CHAIN.map((s, i) => <li key={s.id} data-step={s.id}>
+                <details>
+                    <summary>
+                        <span className="mt-flow-n" aria-hidden="true">{i + 1}</span>
+                        <b>{s.label}</b>
+                    </summary>
+                    <p>{s.detail}<FootnoteRef sources={s.sources} asOf="2026" confidence="reported" /></p>
+                </details>
             </li>)}
         </ol>
 

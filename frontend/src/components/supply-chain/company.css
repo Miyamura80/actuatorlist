@@ -49,3 +49,6 @@ button.sc-partner:hover, button.sc-partner:focus-visible, a.sc-partner:hover { c
     .sc-ctable-seg { font-size: 0; gap: 0; }
     .sc-ctable th, .sc-ctable td { padding-right: 8px; }
 }
+.sc-fold .fold-summary { padding: 10px 0; }
+.sc-fold .fold-title { font: 600 10px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.sc-fold .fold-body { padding: 0 0 8px; }

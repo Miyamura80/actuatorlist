@@ -12,6 +12,7 @@ import { readCountryState, withCountryState } from "../src/pages/supply-chain/co
 
 const JP = JSON.parse(readFileSync(new URL("../public/geo/jp-admin1.json", import.meta.url), "utf8")) as MapTopology;
 const JAPAN = getCountryPage("japan") as Page;
+const KR = JSON.parse(readFileSync(new URL("../public/geo/kr-admin1.json", import.meta.url), "utf8")) as MapTopology;
 const COMPANIES = countryCompanies("JP");
 
 const setURL = (path: string) =>
@@ -130,16 +131,37 @@ test("a site abroad picked in the drawer opens its detail; ?company= outside the
     expect(mount().container.querySelector(".mk-drawer")).toBeNull();
 });
 
-test("?cluster= opens the cluster panel listing its members", () => {
+test("?cluster= opens the cluster card in the drawer; a company drills in; Escape steps back up", () => {
     setURL("/japan?cluster=nagano-precision");
     const view = mount();
-    const panel = view.container.querySelector(".cp-cluster") as HTMLElement;
-    expect(panel.querySelector("h2")?.textContent).toContain("Nagano precision belt");
-    const names = [...panel.querySelectorAll("li button")].map((b) => b.textContent);
+    const panel = view.container.querySelector(".mk-drawer") as HTMLElement;
+    expect(panel.querySelector("h3")?.textContent).toContain("Nagano precision belt");
+    const names = [...panel.querySelectorAll(".cp-ccard-name")].map((b) => b.textContent);
     expect(names).toEqual(expect.arrayContaining(["Harmonic Drive Systems", "Seiko Epson", "Sanyo Denki"]));
+    // The table narrows to the cluster's companies.
+    const rows = view.container.querySelectorAll(".cp-companies tbody tr").length;
+    expect(rows).toBe(names.length);
     act(() => { fireEvent.click(within(panel).getByText("Seiko Epson")); });
     expect(readCountryState(window.location.search).company).toBe("seiko-epson");
-    expect(view.container.querySelector(".mk-drawer h3")?.textContent).toBe("Seiko Epson");
+    const drawer = view.container.querySelector(".mk-drawer") as HTMLElement;
+    expect(drawer.querySelector("h3")?.textContent).toBe("Seiko Epson");
+    const crumbs = [...drawer.querySelectorAll(".mk-crumbs button")].map((b) => b.textContent);
+    expect(crumbs).toEqual(["Japan", "Nagano precision belt"]);
+    act(() => { fireEvent.keyDown(window, { key: "Escape" }); });
+    const back = readCountryState(window.location.search);
+    expect(back.company).toBeNull();
+    expect(back.cluster).toBe("nagano-precision");
+    act(() => { fireEvent.keyDown(window, { key: "Escape" }); });
+    expect(window.location.search).toBe("");
+    expect(view.container.querySelector(".mk-drawer")).toBeNull();
+});
+
+test("the country level opens calm: no drawer, no links, the table folded", () => {
+    setURL("/japan");
+    const c = mount().container;
+    expect(c.querySelector(".mk-drawer")).toBeNull();
+    expect(c.querySelectorAll(".mk-arc-line").length).toBe(0);
+    expect((c.querySelector(".cp-companies") as HTMLDetailsElement).open).toBe(false);
 });
 
 test("company table sorts by a column and selects a company", () => {
@@ -201,6 +223,23 @@ test("a busy country opens on regional hubs, named after them", () => {
     expect(hubs.some((l) => l.startsWith("Great Lakes"))).toBe(true);
     // No scattered single pins while zoomed out: every site sits in a hub.
     expect(c.querySelectorAll(".mk-pin")).toHaveLength(0);
+});
+
+test("a hub drills into its cluster only when it is one whole cluster; otherwise it zooms", () => {
+    setURL("/korea");
+    const kr = render(<CountryPage page={getCountryPage("korea") as Page} topology={KR} />).container;
+    const whole = [...kr.querySelectorAll(".mk-cluster")].find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Daejeon and Sejong")) as HTMLElement;
+    act(() => { fireEvent.click(whole); });
+    expect(readCountryState(window.location.search).cluster).toBe("daejeon-sejong");
+    cleanup();
+    setURL("/us");
+    const us = mountUS().container;
+    const lakes = [...us.querySelectorAll(".mk-cluster")].find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Great Lakes")) as HTMLElement;
+    act(() => { fireEvent.click(lakes); });
+    // No cluster is named "Great Lakes": the URL stays put and the marker
+    // falls back to zooming in (no drawer opens).
+    expect(readCountryState(window.location.search).cluster).toBeNull();
+    expect(us.querySelector(".mk-drawer")).toBeNull();
 });
 
 test("?region= zooms to a state: pins, links and table narrow to it, and there is a way back", () => {

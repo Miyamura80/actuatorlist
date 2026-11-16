@@ -39,6 +39,12 @@ test("gallery, matrix, usage chart, scatter and family tree all render", () => {
     const rows = view.container.querySelectorAll(".os-matrix tbody tr");
     expect(rows).toHaveLength(OPEN_ROBOTS.length);
     expect(rows[0]?.querySelectorAll("td")).toHaveLength(OPENNESS_DIMENSIONS.length + 1);
+    // Cards lead with photo, name, flag and score; facts and openness wait in the card details.
+    expect(view.container.querySelectorAll(".os-card > .os-facts, .os-card > .os-chips")).toHaveLength(0);
+    expect(view.container.querySelectorAll(".os-card .os-more .os-facts")).toHaveLength(OPEN_ROBOTS.length);
+    expect(view.container.querySelectorAll(".os-card .os-more .os-open li")).toHaveLength(OPEN_ROBOTS.length * OPENNESS_DIMENSIONS.length);
+    // The matrix stays in the DOM behind a closed fold.
+    expect((view.container.querySelector(".os-matrix")?.closest("details") as HTMLDetailsElement | null)?.open).toBe(false);
     expect(view.container.querySelectorAll(".os-bars button").length).toBeGreaterThan(0);
     expect(view.container.querySelectorAll(".os-bubble").length).toBeGreaterThan(0);
     expect(view.container.querySelectorAll(".os-lineage")).toHaveLength(familyTree().length);

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { TORQUE_FIT_LABEL, integrationNote } from "@/catalog/shortlist";
 import { absoluteUrl } from "../site";
 import { actuatorPath } from "./catalog-md";
+import { foldSections } from "./html/body";
 import { partRowsHtml } from "./html/part-rows";
 import {
     HUMANOID_GUIDE_PATH,
@@ -99,6 +100,19 @@ function jointRowsHtml(html: string): string {
     return out;
 }
 
+// Every section folds to one row; a joint's row shows its name and estimate,
+// and its <details> id (joint-knee) is what the joint map links to.
+function guideHtml(html: string): string {
+    const joint = (key: string) => JOINTS.find((j) => j.id === key);
+    return foldSections(jointRowsHtml(html), {
+        foldId: (key) => (joint(key) ? `joint-${key}` : `fold-${key}`),
+        meta: (key) => {
+            const j = joint(key);
+            return j ? `${j.torqueNm.toFixed(1)} N·m` : undefined;
+        },
+    });
+}
+
 const TITLE = "Humanoid robot actuators: joint-by-joint guide";
 const DESCRIPTION =
     "Humanoid robot actuators by joint: static torque estimates for hip, knee, ankle, shoulder, elbow and wrist, with catalog shortlists and open unknowns.";
@@ -112,7 +126,7 @@ export const HUMANOID_GUIDE: Page = {
     persistentFrom: "\n\n## How to read this guide",
     persistentLabel: "Method, joint estimates and shortlists",
     headingIds: true,
-    persistentHtml: jointRowsHtml,
+    persistentHtml: guideHtml,
     title: TITLE,
     description: DESCRIPTION,
     ogType: "article",

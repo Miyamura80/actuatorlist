@@ -17,6 +17,7 @@ import { StageShareBar } from "../../../components/flows/StageShareBar";
 import { SupplyGraph } from "../../../components/flows/SupplyGraph";
 import { Flag } from "../../../components/Flag";
 import { FootnoteRef, SourcedValue } from "../../../components/supply-chain/SourcedValue";
+import { Fold } from "../../../components/ui/Fold";
 import { ExplodeScene, ProcessLoop } from "../../../three";
 
 const BOM_LIVE = SUPPLY_CHAIN_PAGES_LIVE.has("/bom");
@@ -61,6 +62,34 @@ function WhoDoesIt({ step, stage, onCompany }: { step: ProcessStep; stage: Stage
     </section>;
 }
 
+function Numbers({ items }: { items: ProcessStep["keyNumbers"] }) {
+    return <dl className="mf-numbers">
+        {items.map((k) => <div key={k.label}><dt>{k.label}</dt><dd><SourcedValue value={k.value} /></dd></div>)}
+    </dl>;
+}
+
+// Everything past first paint: extra numbers, inputs and outputs, who runs the
+// step and where its stage is concentrated. The badge stays on the summary.
+function StepMore({ step, rest, stage, stageLabel, onCompany }: {
+    step: ProcessStep;
+    rest: ProcessStep["keyNumbers"];
+    stage: Stage | undefined;
+    stageLabel: string | undefined;
+    onCompany: (id: string) => void;
+}) {
+    const shares = sharesOf(step.shares);
+    return <Fold className="mf-card-more" title="Who and where"
+        headline={shares ? <ConcentrationBadge shares={shares} /> : undefined}>
+        {rest.length ? <Numbers items={rest} /> : null}
+        <p className="mf-io"><span>{step.inputs.join(" + ")}</span><Arrow dir="next" /><span>{step.outputs.join(" + ")}</span></p>
+        <WhoDoesIt step={step} stage={stage} onCompany={onCompany} />
+        {shares ? <section className="mf-card-sec" aria-label="Where">
+            <h4>Where</h4>
+            <StageShareBar shares={shares} label={`${stageLabel ?? "Stage"} output by country`} />
+        </section> : null}
+    </Fold>;
+}
+
 export interface StepCardProps {
     chain: ProcessChain;
     stepId: string;
@@ -71,8 +100,8 @@ export interface StepCardProps {
 }
 
 // The focused step: its looping 3D vignette (one live WebGL context; posters
-// elsewhere), two or three cited numbers, who runs it, where the stage is
-// concentrated, and links to /bom and /metals.
+// elsewhere), its caption and up to two cited numbers; who runs it and where
+// the stage is concentrated wait in one fold. Links to /bom and /metals.
 export function StepCard({ chain, stepId, onClose, onStep, onCompany, mode }: StepCardProps) {
     const ref = useRef<HTMLElement>(null);
     const step = chain.steps.find((s) => s.id === stepId);
@@ -101,11 +130,13 @@ export function StepCard({ chain, stepId, onClose, onStep, onCompany, mode }: St
     }
     if (!step) return null;
     const cluster = chain.clusters.find((c) => c.id === step.cluster);
-    const shares = sharesOf(step.shares);
     const { prev, next } = neighbours(chain, step.id);
     // neighbours() lists main-line steps first; the last step leads to the product.
     const prevId = prev[0];
     const nextId = next[0] ?? PRODUCT_ID;
+    // First paint: the vignette, the caption and at most two numbers.
+    const lead = step.keyNumbers.slice(0, 2);
+    const rest = step.keyNumbers.slice(2);
     const label = (id: string | undefined) => (id === PRODUCT_ID ? chain.productLabel : chain.steps.find((s) => s.id === id)?.label);
     return <aside ref={ref} tabIndex={-1} className={`mf-card is-${mode}`} aria-label={step.label} data-step={step.id}>
         <header className="mf-card-head">
@@ -117,15 +148,8 @@ export function StepCard({ chain, stepId, onClose, onStep, onCompany, mode }: St
             ? <ProcessLoop key={step.animation.id} loop={step.animation} className="mf-card-3d" />
             : <div className="mf-card-icon"><ProcessIconSvg icon={step.icon} /></div>}
         <p className="mf-card-caption">{step.caption}<FootnoteRef sources={step.sources} asOf={MANUFACTURING_AS_OF} confidence="reported" /></p>
-        {step.keyNumbers.length ? <dl className="mf-numbers">
-            {step.keyNumbers.map((k) => <div key={k.label}><dt>{k.label}</dt><dd><SourcedValue value={k.value} /></dd></div>)}
-        </dl> : null}
-        <p className="mf-io"><span>{step.inputs.join(" + ")}</span><Arrow dir="next" /><span>{step.outputs.join(" + ")}</span></p>
-        <WhoDoesIt step={step} stage={cluster?.stage} onCompany={onCompany} />
-        {shares ? <section className="mf-card-sec" aria-label="Where">
-            <h4>Where <ConcentrationBadge shares={shares} /></h4>
-            <StageShareBar shares={shares} label={`${cluster?.label ?? "Stage"} output by country`} />
-        </section> : null}
+        {lead.length ? <Numbers items={lead} /> : null}
+        <StepMore step={step} rest={rest} stage={cluster?.stage} stageLabel={cluster?.label} onCompany={onCompany} />
         <div className="mf-links">
             {step.elementIds.map((e) => <a key={e} className="mf-chip" href={`/metals?element=${e}`}>{getMetal(e)?.symbol ?? e}</a>)}
             {step.bomNodeIds.map((id) => <BomLink key={id} id={id} />)}

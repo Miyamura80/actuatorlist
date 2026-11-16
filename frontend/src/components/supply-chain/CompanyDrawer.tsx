@@ -9,7 +9,8 @@ import { CompanyLogo } from "../CompanyLogo";
 import { Flag } from "../Flag";
 import { NodeBadge } from "../flows/NodeBadge";
 import { liveCountryPage } from "../maps/Arcs";
-import { MapDrawer } from "../maps/MapDrawer";
+import { type Crumb, MapDrawer } from "../maps/MapDrawer";
+import { Fold } from "../ui/Fold";
 import { SiteDetail } from "./SiteDetail";
 import { FootnoteRef, SourcedValue } from "./SourcedValue";
 import "./company.css";
@@ -63,17 +64,31 @@ function LinkRow({ link, dir, ...p }: { link: SupplyLink; dir: "to" | "from"; on
     </li>;
 }
 
-// The company card a map selection opens (inside <MapDrawer>): HQ, plants,
-// products, role in the chain, revenue, gross margin, ownership, and its
-// suppliers and customers. Selecting a plant expands its <SiteDetail>.
-// Shared by the country pages and the map kit page.
-export function CompanyDrawer({ companyId, siteId = null, country, onClose, onSelectSite, onSelectCompany, onMap }: CompanyDrawerProps) {
+// The company card a map selection opens (inside <MapDrawer>): logo, the
+// headline facts, then its plants and its suppliers and customers, each
+// folded so the card opens short. Selecting a plant opens the sites fold and
+// expands its <SiteDetail>. Shared by the country pages and the map kit page.
+export function CompanyDrawer({ companyId, siteId = null, country, onClose, onSelectSite, onSelectCompany, onMap, crumbs, onBack }: CompanyDrawerProps & { crumbs?: readonly Crumb[]; onBack?: () => void }) {
+    const c = getCompany(companyId);
+    if (!c) return null;
+    return <MapDrawer open title={c.name} kicker={<CompanyKicker companyId={companyId} country={country} />} onClose={onClose} onBack={onBack} crumbs={crumbs}>
+        <CompanyCard companyId={companyId} siteId={siteId} country={country} onSelectSite={onSelectSite} onSelectCompany={onSelectCompany} onMap={onMap} />
+    </MapDrawer>;
+}
+
+export function CompanyKicker({ companyId, country }: { companyId: string; country?: string }) {
+    const c = getCompany(companyId);
+    if (!c) return null;
+    const foreign = country && c.hqCountry !== country;
+    return <><Flag code={c.hqCountry} decorative /> {SEGMENT_LABEL[c.segment]}{foreign ? <span className="sc-owner-chip">Owner: {countryName(c.hqCountry)}</span> : null}</>;
+}
+
+export function CompanyCard({ companyId, siteId = null, country, onSelectSite, onSelectCompany, onMap }: Omit<CompanyDrawerProps, "onClose">) {
     const c = getCompany(companyId);
     if (!c) return null;
     const sites = sitesOf(c.id).sort((a, b) => Number(b.country === country) - Number(a.country === country) || Number(b.kind === "hq") - Number(a.kind === "hq"));
     const { supplies, buys } = linksOf(c.id);
     const current = [...supplies.filter((l) => !l.ended).map((l) => ({ l, dir: "to" as const })), ...buys.filter((l) => !l.ended).map((l) => ({ l, dir: "from" as const }))];
-    const foreign = country && c.hqCountry !== country;
     const facts: [string, ReactNode][] = [
         ["Revenue", c.revenue ? <SourcedValue value={c.revenue} /> : null],
         ["Gross margin", c.grossMargin ? <NodeBadge kind="margin" value={c.grossMargin} /> : null],
@@ -82,23 +97,17 @@ export function CompanyDrawer({ companyId, siteId = null, country, onClose, onSe
         ["Products", c.products?.length ? c.products.join(", ") : null],
     ];
     const bom = SUPPLY_CHAIN_PAGES_LIVE.has("/bom") ? `/bom?company=${encodeURIComponent(c.id)}` : null;
-    return <MapDrawer
-        open
-        title={c.name}
-        kicker={<><Flag code={c.hqCountry} decorative /> {SEGMENT_LABEL[c.segment]}{foreign ? <span className="sc-owner-chip">Owner: {countryName(c.hqCountry)}</span> : null}</>}
-        onClose={onClose}
-    >
-        <div className="sc-company" data-company={c.id}>
-            <p className="sc-company-head">
-                <CompanyLogo name={c.name} size={20} />
-                {c.localName ? <span lang={c.hqCountry === "JP" ? "ja" : undefined}>{c.localName}</span> : null}
-                <a href={c.url} rel="noopener">Website</a>
-                {c.sources?.length ? <FootnoteRef sources={c.sources} asOf={SUPPLY_CHAIN_AS_OF} confidence="reported" /> : null}
-            </p>
-            <dl className="sc-facts">
-                {facts.filter(([, v]) => v !== null).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
-            </dl>
-            <h4>Sites <span>{sites.length}</span></h4>
+    return <div className="sc-company" data-company={c.id}>
+        <p className="sc-company-head">
+            <CompanyLogo name={c.name} size={20} />
+            {c.localName ? <span lang={c.hqCountry === "JP" ? "ja" : undefined}>{c.localName}</span> : null}
+            <a href={c.url} rel="noopener">Website</a>
+            {c.sources?.length ? <FootnoteRef sources={c.sources} asOf={SUPPLY_CHAIN_AS_OF} confidence="reported" /> : null}
+        </p>
+        <dl className="sc-facts">
+            {facts.filter(([, v]) => v !== null).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+        </dl>
+        <Fold key={siteId ? "sites-open" : "sites"} className="sc-fold" title="Sites" count={sites.length} defaultOpen={!!siteId}>
             <ul className="sc-sites">
                 {sites.map((s) => <li key={s.id} className={s.id === siteId ? "is-on" : undefined}>
                     <button type="button" aria-expanded={s.id === siteId} onClick={() => onSelectSite?.(s.id)}>
@@ -108,13 +117,12 @@ export function CompanyDrawer({ companyId, siteId = null, country, onClose, onSe
                     {s.id === siteId ? <SiteDetail site={s} /> : null}
                 </li>)}
             </ul>
-            {current.length ? <>
-                <h4>Supply links <span>{current.length}</span></h4>
-                <ul className="sc-links">
-                    {current.map(({ l, dir }) => <LinkRow key={`${l.from}-${l.to}`} link={l} dir={dir} onSelect={onSelectCompany} onMap={onMap} />)}
-                </ul>
-            </> : null}
-            {bom ? <p className="sc-company-bom"><a href={bom}>In the bill of materials</a></p> : null}
-        </div>
-    </MapDrawer>;
+        </Fold>
+        {current.length ? <Fold className="sc-fold" title="Supply links" count={current.length}>
+            <ul className="sc-links">
+                {current.map(({ l, dir }) => <LinkRow key={`${l.from}-${l.to}`} link={l} dir={dir} onSelect={onSelectCompany} onMap={onMap} />)}
+            </ul>
+        </Fold> : null}
+        {bom ? <p className="sc-company-bom"><a href={bom}>In the bill of materials</a></p> : null}
+    </div>;
 }

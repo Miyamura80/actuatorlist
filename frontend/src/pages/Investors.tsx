@@ -3,6 +3,7 @@ import { PublicHeader } from "../components/PublicHeader";
 import { PublicFooter } from "../components/PublicFooter";
 import { FundLedger, TIER_COLOR } from "../components/FundLedger";
 import { CompanyLogo } from "../components/CompanyLogo";
+import { Fold } from "../components/ui/Fold";
 import {
     companyOf,
     FUNDS,
@@ -12,25 +13,16 @@ import {
     KINDS,
     type Kind,
     sidelineFunds,
-    tierOf,
 } from "../../../src/investors";
 import "./tools.css";
 import "./investors.css";
 
 const TITLE = "Actuator investors";
-const PRESETS: { label: string; kinds: Kind[] }[] = [
-    { label: "All bets", kinds: ["direct", "adj", "hw"] },
-    { label: "Pure-play actuators", kinds: ["direct"] },
-    { label: "Robot makers", kinds: ["adj", "hw"] },
-    { label: "Actuators incl. in-house", kinds: ["direct", "adj"] },
-];
 const TOGGLE_LABEL: Record<Kind, string> = {
     direct: "Actuator maker (pure-play)",
     adj: "Robot maker, own actuators",
     hw: "Robot hardware, actuators not confirmed",
 };
-// Text needs a lighter step than the dark robot-hardware fill.
-const COUNT_COLOR: Record<Kind, string> = { hw: "#6f9e9b", adj: "var(--inv-adj)", direct: "var(--inv-direct)" };
 const hostOf = (url: string) => new URL(url).hostname.replace(/^www\./, "");
 
 export function Investors({ menuOpen = false }: { menuOpen?: boolean }) {
@@ -48,7 +40,6 @@ export function Investors({ menuOpen = false }: { menuOpen?: boolean }) {
     const inView = sidelineFunds(active).length;
     const toggle = (k: Kind) =>
         setActive((cur) => (cur.includes(k) ? (cur.length > 1 ? cur.filter((x) => x !== k) : cur) : KINDS.filter((x) => x === k || cur.includes(x))));
-    const same = (kinds: Kind[]) => kinds.length === active.length && kinds.every((k) => active.includes(k));
 
     return (
         <div className="tool-page inv-page">
@@ -75,23 +66,8 @@ export function Investors({ menuOpen = false }: { menuOpen?: boolean }) {
                             ))}
                         </div>
                     </div>
-                    <div className="inv-in">
-                        {(["hw", "adj", "direct"] as const).map((k) => (
-                            <div key={k}>
-                                <b style={{ color: COUNT_COLOR[k] }}>{FUNDS.filter((f) => tierOf(f) === k).length}</b>
-                                <span>{KIND_LABEL[k]}</span>
-                            </div>
-                        ))}
-                    </div>
                 </section>
 
-                <div className="inv-presets" role="group" aria-label="Show">
-                    {PRESETS.map((p) => (
-                        <button key={p.label} type="button" aria-pressed={same(p.kinds)} onClick={() => setActive(p.kinds)}>
-                            {p.label}
-                        </button>
-                    ))}
-                </div>
                 <div className="inv-key" aria-label="Legend and filters">
                     {KINDS.map((k) => (
                         <button key={k} type="button" aria-pressed={active.includes(k)} onClick={() => toggle(k)}>
@@ -114,14 +90,13 @@ export function Investors({ menuOpen = false }: { menuOpen?: boolean }) {
                 </div>
                 <p className="inv-note-line">
                     {active.length === KINDS.length
-                        ? "Hover a dot for the company and round."
+                        ? "Tap a fund for its deals and sources."
                         : `${inView} of 29 funds have no bet of the selected types.`}
                 </p>
 
                 <FundLedger active={active} folded={folded} onFold={() => setFolded((f) => !f)} />
 
-                <details className="inv-sources">
-                    <summary>Deals and sources</summary>
+                <Fold className="inv-sources" title="Deals and sources" count={FUNDS.reduce((t, f) => t + f.deals.length, 0)}>
                     <div className="inv-table">
                         <table>
                             <thead>
@@ -184,9 +159,8 @@ export function Investors({ menuOpen = false }: { menuOpen?: boolean }) {
                             </tbody>
                         </table>
                     </div>
-                </details>
-                <details className="inv-sources inv-method-fold">
-                    <summary>Method and caveats</summary>
+                </Fold>
+                <Fold className="inv-sources inv-method-fold" title="Method and caveats">
                     <p className="inv-method">
                         "No actuated bet" means public announcements and press did not name the fund in a round for an
                         actuator maker or a robot hardware company. Paid databases (PitchBook, Crunchbase) were not checked,
@@ -196,7 +170,7 @@ export function Investors({ menuOpen = false }: { menuOpen?: boolean }) {
                         joint-actuator maker RobStride but has been a separate firm from Sequoia since 2023, so it is not
                         counted.
                     </p>
-                </details>
+                </Fold>
             </main>
             <PublicFooter />
         </div>

@@ -17,10 +17,25 @@ test("React authored features omit removed or renamed catalog references", () =>
     }
 });
 
-test("React hub mass qualifies retained AK80-9 revision conflict beside the number", () => {
+test("React hub pair cards show a title and two thumbnails, never an unqualified number", () => {
     const html = renderToStaticMarkup(<ComparisonHub />);
-    expect(html).toContain("485 g: Revision conflict: retained catalog value; confirm installed revision.");
+    // Numbers live on the comparison pages, where revision conflicts are qualified.
+    expect(html).not.toContain("485 g");
     expect(ACTUATORS.find(a => a.id === "cubemars-ak80-9")?.weight_g).toBe(485);
+    document.body.innerHTML = html;
+    const cards = [...document.querySelectorAll(".comparison-links a")];
+    expect(cards.length).toBeGreaterThan(0);
+    for (const card of cards) {
+        expect(card.querySelectorAll(".comparison-thumb")).toHaveLength(2);
+        expect(card.querySelector(".comparison-pair-title")?.textContent).toContain(" vs ");
+    }
+    // Category sections start as closed folds with a count.
+    const folds = [...document.querySelectorAll(".comparison-hub > section > details.fold")];
+    expect(folds.length).toBeGreaterThan(0);
+    expect(folds.every(f => !f.hasAttribute("open") && f.querySelector(".fold-count"))).toBe(true);
+    // Disclaimers are merged into one fold.
+    expect(document.querySelectorAll(".comparison-about")).toHaveLength(1);
+    document.body.innerHTML = "";
 });
 
 test("React category fragments target focusable native sections", () => {

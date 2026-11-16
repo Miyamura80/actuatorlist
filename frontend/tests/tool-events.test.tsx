@@ -57,7 +57,7 @@ test("shortlist links carry the measurement attributes the bootstrap checks agai
         expect(a.dataset).toMatchObject({ measureEvent: "tool_shortlist_click", measureSurface: "tool" });
         expect(a.getAttribute("href")).toBe(`/actuators/${a.dataset.productId}`);
     }
-    const cta = view.container.querySelector<HTMLAnchorElement>("a.req-cta");
+    const cta = view.container.querySelector<HTMLAnchorElement>("a.req-result-cta");
     expect(cta?.dataset.productId).toBeUndefined();
     expect(cta?.dataset.measureEvent).toBe("tool_shortlist_click");
 });

@@ -93,6 +93,22 @@ export const PAGE_CSS = `
 .ga-page h2#hip::before{content:"5"}
 .ga-page h2#knee::before{content:"6"}
 .ga-page h2#ankle::before{content:"7"}
+.ga-page .ga-fold{border-top:1px solid #242424}
+.ga-page .ga-fold:not(:has(~.ga-fold)){border-bottom:1px solid #242424}
+.ga-page .ga-fold>summary{display:flex;align-items:center;gap:10px;box-sizing:border-box;min-height:44px;padding:12px 2px;cursor:pointer;list-style:none}
+.ga-page .ga-fold>summary::-webkit-details-marker{display:none}
+.ga-page .ga-fold-chev{flex:none;color:#9ba4a6;fill:none;stroke:currentColor;stroke-width:1.6;transition:transform .18s ease}
+.ga-page .ga-fold[open]>summary>.ga-fold-chev{transform:rotate(90deg)}
+.ga-page .ga-fold>summary h2,.ga-page .ga-fold-title{display:flex;align-items:center;gap:8px;min-width:0;margin:0;padding:0;border:0;font-size:14px;font-weight:600;line-height:1.4;color:#f9f9f9}
+.ga-page .ga-fold>summary .ga-h2-icon{width:18px;height:18px;flex:none;fill:none;stroke:#c3fffd;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ga-page .ga-fold>summary:hover :is(h2,.ga-fold-title),.ga-page .ga-fold>summary:focus-visible :is(h2,.ga-fold-title){color:#c3fffd}
+.ga-page .ga-fold>summary:focus-visible{outline:2px solid #c3fffd;outline-offset:2px}
+.ga-page .ga-fold-meta{margin-left:auto;flex:none;font:12px "JetBrains Mono",monospace;color:#9ba4a6}
+.ga-page .ga-fold-body{padding:0 0 16px 22px;min-width:0}
+.ga-page .ga-fold-outer{border-bottom:1px solid #242424}
+.ga-page .ga-fold-outer>.ga-fold-body{padding-left:0}
+.ga-page .ga-fold>summary h2[id]::before{width:1.4rem;height:1.4rem;margin-right:.1rem;font-size:.75rem;vertical-align:0}
+@media(prefers-reduced-motion:reduce){.ga-page .ga-fold-chev{transition:none}}
 ${NAVIGATION_CSS}
 ${COMPARISONS_CSS}
 `.trim();

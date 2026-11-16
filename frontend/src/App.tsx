@@ -13,12 +13,11 @@ import { Scatter } from "./components/Scatter";
 import { Legend } from "./components/Legend";
 import { colorForBrand, legendFor } from "./lib/brands";
 import { DetailPanel } from "./components/DetailPanel";
-import { Link } from "./lib/router";
+import { Fold } from "./components/ui/Fold";
 import type { Actuator } from "./types";
 
 const NAV: NavItem[] = [
     { id: "highlights", label: "Highlights" },
-    { id: "rankings", label: "Torque density" },
     { id: "scatter", label: "Torque vs Cost" },
 ];
 
@@ -81,7 +80,7 @@ export default function App({ menuOpen = false }: { menuOpen?: boolean }) {
             <Sidebar items={NAV} active={active} onSelect={goTo} />
 
             <main className="content">
-                <Hero />
+                <Hero count={ACTUATORS.length} />
 
                 <section id="highlights" className="block">
                     <h2 className="block-title">
@@ -91,45 +90,49 @@ export default function App({ menuOpen = false }: { menuOpen?: boolean }) {
                     <HighlightCards actuators={ACTUATORS} onSelect={openById} />
                 </section>
 
-                <section id="rankings" className="block">
-                    <h2 className="block-title">
-                        <BrandGlyph className="block-tag" />
-                        Torque density ranking
-                    </h2>
-                    <p className="block-sub">
-                        Peak N{"·"}m per kg, top 20 across the dataset. Higher is better.
-                        Colored by provider.
-                    </p>
-                    <Legend entries={legend} />
-                    <div className="chart-scroll">
-                        <BarChart items={rankItems} onSelect={openById} />
-                    </div>
-                </section>
-
                 <section id="scatter" className="block">
                     <h2 className="block-title">
                         <BrandGlyph className="block-tag" />
                         Torque density vs Cost
                     </h2>
-                    <p className="block-sub">
-                        Priced actuators only. The shaded region is high density at low
-                        cost; the dotted line is the Pareto frontier. Colored by provider.
-                    </p>
-                    <Legend entries={legend} />
+                    <ScatterKey />
                     <div className="chart-scroll">
                         <Scatter actuators={ACTUATORS} onSelect={openById} />
                     </div>
+                    <Fold title="Colors" headline={`${legend.length} providers`}>
+                        <Legend entries={legend} />
+                    </Fold>
+                    <Fold title="Top 20 by torque density" headline="N·m/kg">
+                        <div className="chart-scroll">
+                            <BarChart items={rankItems} onSelect={openById} />
+                        </div>
+                    </Fold>
                 </section>
-
-                <Link to="/actuators?view=list" className="all-cta">
-                    <span className="all-cta-title">Browse all {ACTUATORS.length} actuators</span>
-                    <span className="all-cta-go" aria-hidden="true">→</span>
-                </Link>
             </main>
 
             <DetailPanel actuator={selected} onClose={() => setSelected(null)} />
         </div>
         <PublicFooter />
         </>
+    );
+}
+
+// Picture key for the scatter: the shaded sweet spot and the dotted frontier.
+function ScatterKey() {
+    return (
+        <div className="scatter-key" aria-label="Chart key">
+            <span>
+                <svg width="18" height="12" aria-hidden="true">
+                    <rect width="18" height="12" rx="2" fill="var(--cyan)" opacity="0.14" />
+                </svg>
+                dense and cheap
+            </span>
+            <span>
+                <svg width="22" height="12" aria-hidden="true">
+                    <path d="M1 10 L21 2" stroke="var(--cyan)" strokeDasharray="2 3" strokeWidth="1.5" />
+                </svg>
+                best trade-off
+            </span>
+        </div>
     );
 }

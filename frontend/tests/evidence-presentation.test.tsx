@@ -40,3 +40,19 @@ test("sticky tray compare remains a native link with a visible 44px primary targ
         expect(rule).toContain(declaration);
     }
 });
+
+test("detail drawer leads with four big numbers, folds the rest, and closes on Escape", () => {
+    const a = ACTUATORS.find(product => product.product_url)!;
+    let closed = 0;
+    const view = render(<DetailPanel actuator={a} onClose={() => { closed++; }} />);
+    const headline = [...view.container.querySelectorAll(".drawer-headline dt")].map(dt => dt.textContent);
+    expect(headline).toEqual(["Peak torque", "Torque density", "Weight", "Price"]);
+    expect(view.container.querySelectorAll(".drawer details.fold").length).toBeGreaterThan(0);
+    expect(view.container.querySelectorAll(".drawer details[open]")).toHaveLength(0);
+    const ctas = view.container.querySelectorAll(".cta-primary");
+    expect(ctas).toHaveLength(1);
+    expect(ctas[0]?.textContent).toBe("Product page");
+    expect(document.activeElement === view.getByRole("button", { name: "Close" })).toBe(true);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(closed).toBe(1);
+});

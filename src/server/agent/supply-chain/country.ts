@@ -22,6 +22,7 @@ import {
 import { getCompany } from "@/supply-chain/registry";
 import { STAGE_LABEL } from "@/supply-chain/stages";
 import { SITE_URL, absoluteUrl } from "../../site";
+import { foldOuter, foldSections } from "../html/body";
 import * as ld from "../jsonld";
 import { mdTable, mdText } from "../md";
 import type { Page } from "../page-types";
@@ -295,6 +296,10 @@ function countryPageEntry(p: CountryPage): Page {
         // policies and full data tables stay visible below it.
         persistentFrom: "\n\n## Share of each stage",
         persistentLabel: "Stage shares, policies and data tables",
+        // Thousands of words of tables: one summary line at first paint, then
+        // one row per section, each opening on tap. All of it stays in the DOM.
+        persistentHtml: (html) =>
+            foldOuter(foldSections(html), "Data tables and sources", "data-tables"),
         title: title(p),
         description: `${p.lede} A map of ${countryCompanies(p.code).length} companies' headquarters and plants across rare earths, magnets and motors, gears and bearings, and robot makers, with supply links and sources.`,
         body: () => countryBody(p),

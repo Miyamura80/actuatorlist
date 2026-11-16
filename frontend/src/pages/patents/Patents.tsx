@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { PublicFooter } from "../../components/PublicFooter";
 import { PublicHeader } from "../../components/PublicHeader";
+import { Fold } from "../../components/ui/Fold";
 import {
     FIRST_YEAR,
     LANDSCAPE,
@@ -38,6 +39,31 @@ export const SCOPES: { id: LandscapeScope; label: string }[] = [
     { id: "all", label: "All" },
     ...TECHNOLOGY_LIST.map((t) => ({ id: t.id, label: t.short })),
 ];
+
+// "All" plus the largest technologies get a pill; the rest sit in one select.
+const PILL_TECHS = 4;
+export const PILL_SCOPES: LandscapeScope[] = [
+    "all",
+    ...TECHNOLOGY_LIST.map((t) => t.id)
+        .sort((a, b) => landscapeOf(b).families - landscapeOf(a).families)
+        .slice(0, PILL_TECHS),
+];
+
+function ScopePicker({ scope, onPick }: { scope: LandscapeScope; onPick: (s: LandscapeScope) => void }) {
+    // The picked scope keeps a pill even when it lives in the select.
+    const pills = SCOPES.filter((s) => PILL_SCOPES.includes(s.id) || s.id === scope);
+    const rest = SCOPES.filter((s) => !PILL_SCOPES.includes(s.id));
+    return <div className="pt-scopes" role="group" aria-label="Technology">
+        {pills.map((s) => <button key={s.id} type="button" aria-pressed={scope === s.id} onClick={() => onPick(s.id)}>
+            {s.label}<span>{landscapeOf(s.id).families.toLocaleString("en-US")}</span>
+        </button>)}
+        <select className="pt-scope-more" aria-label="More technologies" value=""
+            onChange={(e) => { if (isLandscapeScope(e.target.value)) onPick(e.target.value); }}>
+            <option value="">More ({rest.length})</option>
+            {rest.map((s) => <option key={s.id} value={s.id}>{s.label} · {landscapeOf(s.id).families.toLocaleString("en-US")}</option>)}
+        </select>
+    </div>;
+}
 
 interface State {
     scope: LandscapeScope;
@@ -143,18 +169,17 @@ export function Patents({ menuOpen = false }: { menuOpen?: boolean }) {
             <header className="tr-head">
                 <h1>Who patents actuator technology</h1>
                 <p>{LANDSCAPE.all.families.toLocaleString("en-US")} patent families · {TECHNOLOGY_LIST.length} technologies · priority {FIRST_YEAR} on · {PATENTS_AS_OF}</p>
+                <a className="cta-primary pt-cta" href={patentsApiPath(state.scope)}>Get the data (JSON)</a>
             </header>
-            <div className="pt-scopes" role="group" aria-label="Technology">
-                {SCOPES.map((s) => <button key={s.id} type="button" aria-pressed={state.scope === s.id} onClick={() => update({ ...state, scope: s.id })}>
-                    {s.label}<span>{landscapeOf(s.id).families.toLocaleString("en-US")}</span>
-                </button>)}
-            </div>
+            <ScopePicker scope={state.scope} onPick={(scope) => update({ ...state, scope })} />
             <p className="pt-scope-line" aria-live="polite"><b>{scopeLabel(state.scope)}</b>{tech ? ` · ${tech.scope}` : ""}</p>
 
             <Section id="pt-stream" title="Families per priority year" aside={<div className="pt-toggles">
                     <Toggle label="Stack by" value={state.by} onChange={(by) => update({ ...state, by })}
                         options={[{ id: "country", label: "By country" }, { id: "technology", label: "By technology" }]} />
-                    <Toggle label="Quality filter" value={state.filter} onChange={(filter) => update({ ...state, filter })} options={STREAM_FILTERS} />
+                    <Fold className="pt-options" title="Options">
+                        <Toggle label="Quality filter" value={state.filter} onChange={(filter) => update({ ...state, filter })} options={STREAM_FILTERS} />
+                    </Fold>
                 </div>}>
                 <Stream scope={state.scope} by={state.by} filter={state.filter} />
             </Section>
@@ -200,7 +225,7 @@ export function Patents({ menuOpen = false }: { menuOpen?: boolean }) {
                     </> : null}
                 </details>
                 <p className="pt-links">
-                    <a href={`${PATENTS_PATH}.md`}>Markdown</a> · <a href={patentsApiPath(state.scope)}>JSON</a> · Data: Google Patents Public Datasets (CC BY 4.0)
+                    <a href={`${PATENTS_PATH}.md`}>Markdown</a> · Data: Google Patents Public Datasets (CC BY 4.0)
                 </p>
             </section>
         </main>

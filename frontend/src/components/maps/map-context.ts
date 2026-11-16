@@ -74,3 +74,12 @@ export function pct(p: Point, width: number, height: number): { left: string; to
 export function reducedMotion(): boolean {
     return typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
+
+// Widen `box` on the right so that, once fitted, its content sits clear of a
+// panel covering `frac` of the frame's width (the drill-down drawer).
+export function roomRight(box: Box, frac: number): Box {
+    if (frac <= 0) return box;
+    const [[x0, y0], [x1, y1]] = box;
+    const w = Math.max(x1 - x0, 1);
+    return [[x0, y0], [x1 + (w * frac) / (1 - frac), y1]];
+}

@@ -324,7 +324,11 @@ export function Startups({ menuOpen = false }: { menuOpen?: boolean }) {
             document.title = prev;
         };
     }, []);
-    const metrics: StartupMetric[] = ["raisedUsd", "unitsPerMonth"];
+    // A map that is mostly hatched says nothing, so output gets its own map only
+    // once at least half the startups report it; until then it is a row badge.
+    const outputMap = STARTUPS.filter((s) => s.unitsPerMonth !== null).length * 2 >= STARTUPS.length;
+    const metrics: StartupMetric[] = outputMap ? ["raisedUsd", "unitsPerMonth"] : ["raisedUsd"];
+    const both = metrics.length > 1;
     const summary = group === "company" ? [] : summarise(group);
     const rows = group === "company" ? STARTUPS : summary.flatMap((g) => g.members);
 
@@ -335,11 +339,7 @@ export function Startups({ menuOpen = false }: { menuOpen?: boolean }) {
                 <header className="tool-head">
                     <p className="tool-kicker">Startups</p>
                     <h1>Actuator startups</h1>
-                    <p className="tool-lede">
-                        New companies building robot actuators and motors, sized by money raised
-                        (grants included) or by the production they report. A + marks a floor where
-                        some rounds are undisclosed; hatched tiles have not disclosed the figure.
-                    </p>
+                    <p className="tool-lede">New actuator makers, sized by money raised (+ means some rounds undisclosed).</p>
                 </header>
 
                 {/* Colour is per company until a pill is pressed; the legend exists only
@@ -374,9 +374,9 @@ export function Startups({ menuOpen = false }: { menuOpen?: boolean }) {
                     </div>
                 </div>
 
-                <div className="su-maps both">
+                <div className={`su-maps${both ? " both" : ""}`}>
                     {metrics.map((m) => (
-                        <Treemap key={m} metric={m} both group={group} focus={focus} setFocus={setFocus} />
+                        <Treemap key={m} metric={m} both={both} group={group} focus={focus} setFocus={setFocus} />
                     ))}
                 </div>
 
@@ -384,7 +384,6 @@ export function Startups({ menuOpen = false }: { menuOpen?: boolean }) {
                     <div className="su-head" aria-hidden="true">
                         <span>Company</span>
                         <span>Raised</span>
-                        <span>Output</span>
                         <span />
                     </div>
                     {rows.map((s) => (
@@ -402,9 +401,13 @@ export function Startups({ menuOpen = false }: { menuOpen?: boolean }) {
                                     <span className="su-flag" role="img" aria-label={countryLabel(s.country)} title={countryLabel(s.country)}>
                                         {countryFlag(s.country)}
                                     </span>
+                                    {s.unitsPerMonth !== null && (
+                                        <span className="su-badge" title={STARTUP_METRICS.unitsPerMonth.label}>
+                                            {formatMetric("unitsPerMonth", s.unitsPerMonth)}
+                                        </span>
+                                    )}
                                 </span>
                                 <span className="su-fig">{formatMetric("raisedUsd", s.raisedUsd, s.raisedIsFloor)}</span>
-                                <span className="su-fig">{formatMetric("unitsPerMonth", s.unitsPerMonth)}</span>
                                 <svg className="su-chev" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" />
                                 </svg>

@@ -4,6 +4,7 @@ import { PublicHeader } from "../../../components/PublicHeader";
 import { FootnotesProvider } from "../../../components/supply-chain/footnotes";
 import { FootnoteRef, SourcedValue } from "../../../components/supply-chain/SourcedValue";
 import { SourcesSection } from "../../../components/supply-chain/SourcesSection";
+import { Fold } from "../../../components/ui/Fold";
 import {
     ALT_FAMILIES,
     ALTS_AS_OF,
@@ -19,7 +20,7 @@ import {
 } from "../../../../../src/supply-chain/alts";
 import { NDFEB_PER_HUMANOID } from "../../../../../src/supply-chain/perspective";
 import { Card } from "./Card";
-import { FamilyGlyph, TechDot, TodayMark } from "./glyphs";
+import { FamilyGlyph, TechDot } from "./glyphs";
 import { Ladder } from "./Ladder";
 import { Landscape } from "./Landscape";
 import { FAMILY_KEY, layout, radiusFor } from "./landscape-model";
@@ -31,6 +32,7 @@ import "./alts.css";
 
 const TITLE = "Alternatives";
 const HEADLINE = "What could replace the rare-earth motor?";
+const MILESTONE_COUNT = ALT_TECHS.reduce((n, t) => n + t.milestones.length, 0);
 
 // /alts as one readiness landscape: TRL across, rare-earth dependence up,
 // one node per technology sized by the deployments we can date. Clicking a
@@ -38,10 +40,8 @@ const HEADLINE = "What could replace the rare-earth motor?";
 
 function Evidence({ id }: { id: string | null }) {
     const t = id ? getAltTech(id) : undefined;
-    if (!t) return <p className="al-evidence is-baseline">
-        <svg viewBox="-14 -14 28 28" aria-hidden="true"><TodayMark r={7} /></svg>
-        <span>Hover a node for its evidence, click it for the spec card.</span>
-    </p>;
+    // Nothing hovered or focused: no read-out, so no standing hint bar.
+    if (!t) return null;
     const n = t.milestones.length;
     return <p className={`al-evidence al-f-${FAMILY_KEY[t.family]}`}>
         <svg viewBox="-8 -8 16 16" aria-hidden="true"><FamilyGlyph family={t.family} /></svg>
@@ -122,7 +122,7 @@ export function Alts({ menuOpen = false }: { menuOpen?: boolean }) {
                         <span className="al-lede-num"><SourcedValue value={NDFEB_PER_HUMANOID} /></span>
                         <span>of rare-earth magnet in a humanoid today. {ALT_TECHS.length} ways to need less, or none, placed by how ready they are.</span>
                     </p>
-                    <a className="al-cta" href="/api/v1/alts">Get the data</a>
+                    <a className="al-cta cta-primary" href="/api/v1/alts">Get the data</a>
                 </header>
 
                 <section className="al-hero" aria-label="Readiness landscape">
@@ -138,18 +138,18 @@ export function Alts({ menuOpen = false }: { menuOpen?: boolean }) {
                         <Card key={tech} id={tech} onClose={close} />
                     </> : null}
                     <Evidence id={hover} />
-                    <MilestoneStrip hidden={hidden} hover={hover} focus={tech} onHover={setHover} onPick={pick} />
-                    <details className="al-more">
-                        <summary>How nodes are placed</summary>
-                        <ul>
+                    <Fold className="al-fold" title="Dated milestones" count={MILESTONE_COUNT}>
+                        <MilestoneStrip hidden={hidden} hover={hover} focus={tech} onHover={setHover} onPick={pick} />
+                    </Fold>
+                    <Fold className="al-fold" title="Method and sources">
+                        <h3 className="al-label">How nodes are placed</h3>
+                        <ul className="al-method">
                             <li><b>Across</b> Technology readiness 1 to 9: our reading of the cited evidence, so a model, not a measurement. Hover the TRL figure for its sources.</li>
                             <li><b>Up</b> What the actuator does for magnets, from its sources. Hydraulics and pneumatic muscles inherit whatever motor drives their pump or air compressor, and a transmission inherits the magnets of the motor that drives it.</li>
                             <li><b>Size</b> How many dated deployments we cite (shipping, pilot, demo or retired). Hollow means none yet. No market estimate sets any size.</li>
                             <li><b>Milestones</b> The year of the earliest dated source we cite; the event may be earlier.</li>
                         </ul>
-                    </details>
-                    <details className="al-more">
-                        <summary>Every node and its sources</summary>
+                        <h3 className="al-label">Every node and its sources</h3>
                         <div className="al-table-wrap">
                             <table className="al-table">
                                 <thead><tr><th>Technology</th><th>TRL</th><th>Magnets</th><th>Milestones</th><th>Deployments</th></tr></thead>
@@ -164,7 +164,7 @@ export function Alts({ menuOpen = false }: { menuOpen?: boolean }) {
                                 </tbody>
                             </table>
                         </div>
-                    </details>
+                    </Fold>
                 </section>
 
                 <p className="al-foot"><a href={`${ALTS_PATH}.md`}>Read as a list</a></p>

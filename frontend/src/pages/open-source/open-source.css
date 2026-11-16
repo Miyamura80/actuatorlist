@@ -35,6 +35,7 @@
 .os-glyph { width: 56px; height: 56px; color: var(--line-strong); }
 .os-card-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
 .os-card h3 { margin: 0; font-size: 16px; }
+.os-card-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .os-meta { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
 .os-facts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-top: 1px solid var(--line); padding-top: 8px; }
 .os-facts dt { font: 600 10px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--os-faint); }
@@ -115,3 +116,10 @@
     .os-bar-track { grid-column: 1 / -1; grid-row: 2; }
     .os-lineage li { flex-wrap: wrap; }
 }
+
+/* Per-card openness, one dot per dimension, inside the card details. */
+.os-open { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.os-open li { display: flex; align-items: center; gap: 6px; }
+.os-more .os-meta { margin: 6px 0 8px; }
+.os-more .os-facts { margin-bottom: 8px; }
+.os-section .fold-title h2 { display: inline; margin: 0; }

@@ -44,8 +44,8 @@ test("opens on the stage overview: four clusters with their concentration", () =
     expect(c.querySelectorAll(".mf-cluster")).toHaveLength(4);
     expect(c.querySelector(".mf-cluster-big")?.textContent).toContain("MINING");
     expect(c.textContent).toContain("MONOPOLIZED");
-    // Keyboard users reach the minimap and every stage as buttons.
-    expect(view.getByRole("button", { name: /^Minimap/ }).classList.contains("mf-minimap")).toBe(true);
+    // At fit there is nothing off screen, so no minimap; every stage is a button.
+    expect(view.queryByRole("button", { name: /^Minimap/ })).toBeNull();
     const stage = view.getByRole("button", { name: /^Mining: zoom in to its \d+ steps$/ });
     expect(stage.getAttribute("tabindex")).toBe("0");
     for (const name of ["Fit map", "Zoom in", "Zoom out"]) expect(view.getByRole("button", { name })).toBeTruthy();
@@ -63,6 +63,11 @@ test("deep link #step= zooms to steps and opens the step card with its poster", 
     const card = c.querySelector(".mf-card");
     expect(card?.getAttribute("data-step")).toBe("jet-milling");
     expect(card?.querySelector(".mf-numbers")?.textContent).toContain("2-5 µm");
+    // First paint holds at most two numbers; who and where wait in a fold.
+    expect(card?.querySelectorAll(":scope > .mf-numbers > div").length).toBeLessThanOrEqual(2);
+    expect(card?.querySelector("details.mf-card-more")?.hasAttribute("open")).toBe(false);
+    // Zoomed past fit, keyboard users reach the minimap as a button.
+    expect(view.getByRole("button", { name: /^Minimap/ }).classList.contains("mf-minimap")).toBe(true);
     // One 3D figure on the page, and it is a poster (no live WebGL here).
     expect(c.querySelectorAll("figure.x3")).toHaveLength(1);
     expect(c.querySelector("figure.x3")?.getAttribute("data-mode")).toBe("poster");

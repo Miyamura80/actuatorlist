@@ -79,6 +79,8 @@ export function ActuatorsPage({ menuOpen = false, prerendered = false }: { menuO
     }, []);
 
     const rows = useMemo(() => applyFilters(ACTUATORS, filters), [filters]);
+    // A search or filter shows every match; the plain catalog starts folded.
+    const filtered = rows.length < ACTUATORS.length;
     // The gallery orders its own sections; keep catalog order for stable ties.
     const sections = useMemo(() => {
         const shown = new Set(rows.map((a) => a.id));
@@ -112,12 +114,8 @@ export function ActuatorsPage({ menuOpen = false, prerendered = false }: { menuO
             <section className="gallery-hero">
                 <h1>
                     <BrandGlyph className="block-tag" />
-                    Actuators
+                    Actuators <span className="gallery-hero-count">{ACTUATORS.length}</span>
                 </h1>
-                <p>
-                    {ACTUATORS.length} rotary actuators. Browse them as a gallery or a
-                    sortable spec table; search and filters apply to both.
-                </p>
             </section>
 
             <div className="catalog" data-view={view}>
@@ -130,32 +128,36 @@ export function ActuatorsPage({ menuOpen = false, prerendered = false }: { menuO
                         total={ACTUATORS.length}
                         shown={rows.length}
                         onChange={onFilters}
+                        panelExtra={view === "gallery" && (
+                            <fieldset>
+                                <legend>Group by</legend>
+                                <div className="chips" role="group" aria-label="Group actuators by">
+                                    {GROUPINGS.map((g) => (
+                                        <button
+                                            key={g.key}
+                                            type="button"
+                                            className="chip"
+                                            aria-pressed={by === g.key}
+                                            data-on={by === g.key}
+                                            onClick={() => update({ by: g.key })}
+                                        >
+                                            {g.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </fieldset>
+                        )}
                     >
                         <ViewSwitch view={view} onChange={onView} />
                     </FilterBar>
                     {view === "gallery" && (
-                        <div className="gallery-toolbar-row">
-                            <div className="gallery-group-by" role="group" aria-label="Group actuators by">
-                                <span>Group by</span>
-                                {GROUPINGS.map((g) => (
-                                    <button
-                                        key={g.key}
-                                        type="button"
-                                        aria-pressed={by === g.key}
-                                        onClick={() => update({ by: g.key })}
-                                    >
-                                        {g.label}
-                                    </button>
-                                ))}
-                            </div>
-                            <nav className="gallery-jump" aria-label="Jump to section">
-                                {sections.map((s) => (
-                                    <a key={s.key} href={`#${by}-${s.key}`}>
-                                        {s.label} <b>{s.cards.length}</b>
-                                    </a>
-                                ))}
-                            </nav>
-                        </div>
+                        <nav className="gallery-jump" aria-label="Jump to section">
+                            {sections.map((s) => (
+                                <a key={s.key} href={`#${by}-${s.key}`}>
+                                    {s.label} <b>{s.cards.length}</b>
+                                </a>
+                            ))}
+                        </nav>
                     )}
                 </div>
 
@@ -167,6 +169,7 @@ export function ActuatorsPage({ menuOpen = false, prerendered = false }: { menuO
                             picked={selection.ids}
                             pickReady={selection.ready}
                             onPick={selection.toggle}
+                            expandAll={filtered}
                         />
                     ) : (
                         <p className="catalog-empty">No actuators match these filters.</p>

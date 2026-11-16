@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ACTUATORS } from "../lib/data";
 import type { Actuator } from "../types";
 import { compareHref } from "../lib/compare-selection";
@@ -71,6 +72,39 @@ function measured(productId?: string) {
     };
 }
 
+// Rows shown before "Show all": enough to judge the fit at first paint.
+const FIRST_ROWS = 3;
+
+// One line next to the result: how many catalog actuators reach it, and the
+// page's one primary action, comparing the best few side by side.
+export function ShortlistResult({
+    torqueNm,
+    speedRpm,
+    limit = 6,
+}: {
+    torqueNm: number;
+    speedRpm?: number;
+    limit?: number;
+}) {
+    const list = shortlist(ACTUATORS, { torqueNm, speedRpm }, limit);
+    const picks = list.rows.slice(0, 4).map((r) => r.actuator.id);
+    const at = `${fmt(torqueNm)} N·m${speedRpm ? ` at ${fmt(speedRpm)} rpm` : ""}`;
+    return (
+        <div className="req-result">
+            <p>
+                {list.total
+                    ? `${list.total} ${list.total === 1 ? "actuator reaches" : "actuators reach"} ${at}`
+                    : `No catalog actuator reaches ${at}`}
+            </p>
+            {picks.length >= 2 && (
+                <a className="cta-primary req-result-cta" href={compareHref(picks)} {...measured()}>
+                    Compare top {picks.length} side by side →
+                </a>
+            )}
+        </div>
+    );
+}
+
 // The handoff from a computed requirement into the catalog: which documented
 // actuators reach it, how (rated vs peak), and what remains unknown.
 export function RequirementShortlist({
@@ -88,7 +122,8 @@ export function RequirementShortlist({
     onUse?: { label: (a: Actuator) => string; act: (a: Actuator) => void };
 }) {
     const list = shortlist(ACTUATORS, { torqueNm, speedRpm }, limit);
-    const picks = list.rows.slice(0, 4).map((r) => r.actuator.id);
+    const [all, setAll] = useState(false);
+    const rows = all ? list.rows : list.rows.slice(0, FIRST_ROWS);
     return (
         <section className="req-list" aria-labelledby="req-list-title">
             <header className="req-list-head">
@@ -101,8 +136,8 @@ export function RequirementShortlist({
                 {list.rows.length > 0 && <ShortlistKey speed={speedRpm != null} />}
             </header>
             {list.rows.length > 0 && (
-                <ol className="req-rows">
-                    {list.rows.map(({ actuator: a, torque, speed }) => {
+                <ol className="req-rows" id="req-rows">
+                    {rows.map(({ actuator: a, torque, speed }) => {
                         const note = integrationNote(a);
                         return (
                             <li key={a.id} className={`req-row fit-${torque}`}>
@@ -138,10 +173,16 @@ export function RequirementShortlist({
                 </ol>
             )}
             <p className="req-actions">
-                {picks.length >= 2 && (
-                    <a className="req-cta" href={compareHref(picks)} {...measured()}>
-                        Compare top {picks.length} side by side →
-                    </a>
+                {list.rows.length > FIRST_ROWS && (
+                    <button
+                        type="button"
+                        className="req-more"
+                        aria-expanded={all}
+                        aria-controls="req-rows"
+                        onClick={() => setAll((v) => !v)}
+                    >
+                        {all ? "Show fewer" : `Show all ${list.rows.length}`}
+                    </button>
                 )}
                 <a href="/actuators?view=list">Browse all {ACTUATORS.length} actuators</a>
             </p>

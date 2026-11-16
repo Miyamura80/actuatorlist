@@ -110,13 +110,21 @@ test("an unknown case shows a not-found state, not the index", () => {
     expect(document.querySelector(".bm-card")).toBeNull();
 });
 
-test("the index's compare toggle is a disclosure with a fixed name", async () => {
+test("the index shows the compare flows open, scaled by price, with one CTA", () => {
     setURL("/bom");
-    const { getByRole } = render(<Bom />);
-    const toggle = getByRole("button", { name: "Compare" });
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    await act(async () => { fireEvent.click(toggle); });
-    expect(toggle.textContent).toBe("Compare");
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    expect(document.getElementById("bm-compare")?.hidden).toBe(true);
+    const { container, queryByRole } = render(<Bom />);
+    expect(queryByRole("button", { name: "Compare" })).toBeNull();
+    const compare = document.getElementById("bm-compare");
+    expect(compare?.hidden).toBe(false);
+    const heights = [...container.querySelectorAll<HTMLElement>(".bm-compare-one .fk-sankey-stage")].map((e) => Number.parseFloat(e.style.height));
+    const prices = BOM_CASES.map((c) => c.price.value);
+    const top = prices.indexOf(Math.max(...prices));
+    expect(heights).toHaveLength(BOM_CASES.length);
+    expect(Math.max(...heights)).toBe(heights[top] ?? Number.NaN);
+    // Each card: a big idiot index up front, price, takeaway and robots in a fold.
+    expect(container.querySelectorAll(".bm-card .bm-card-idiot .bm-idiot")).toHaveLength(BOM_CASES.length);
+    expect(container.querySelectorAll(".bm-card details.bm-card-more:not([open]) .bm-card-take")).toHaveLength(BOM_CASES.length);
+    const cta = container.querySelectorAll(".cta-primary");
+    expect(cta).toHaveLength(1);
+    expect(cta[0]?.getAttribute("href")).toBe("/api/v1/bom");
 });

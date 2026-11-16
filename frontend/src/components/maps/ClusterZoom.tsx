@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { type MapPin, type NamedCluster, mixPhrase, segmentMix } from "../../../../src/supply-chain/map";
 import { boxOf, clusterBox, groupName, groupPoints, insideCluster, mergeOverlapping, type Placed, placeTag, type PxRect, tagSize } from "./cluster";
 import type { LabelItem } from "./labels";
-import { type Box, type Point, inView, pct, toScreen, useMap } from "./map-context";
+import { type Box, type Point, inView, pct, roomRight, toScreen, useMap } from "./map-context";
 import { useMapLabels } from "./MapLabels";
 import { PIN_SIZE, PinTable, Pins, pinName } from "./Pins";
 import { mixSize } from "../../../../src/supply-chain/map-groups";
@@ -31,6 +31,11 @@ export interface ClusterZoomProps {
     // Named cluster boxes and tags on the map (false: the index under the
     // map still lists them), e.g. off when zoomed into one region.
     boxes?: boolean;
+    // A hub marker click: the page may drill into that hub (e.g. a named
+    // cluster). Returns true when it did; otherwise the marker zooms in.
+    onHub?: (id: string) => boolean;
+    // Share of the frame's width a side panel covers: zooms keep clear of it.
+    inset?: number;
 }
 
 export interface MapHub {
@@ -54,7 +59,7 @@ const HUB_K = 1.25;
 // A group marker shows what it holds, one segment tile per segment present
 // with its site count (SegmentMix), and, when its members share a named
 // cluster, a company or a region, a callout naming it ("Yangtze River Delta").
-export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, onCluster, selectedId, onSelect, table = "Sites", labels = true, hubs, boxes = true }: ClusterZoomProps) {
+export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, onCluster, selectedId, onSelect, table = "Sites", labels = true, hubs, boxes = true, onHub, inset = 0 }: ClusterZoomProps) {
     const map = useMap();
     const { width, height, project, zoom, scale, svgLayer, belowLayer, zoomTo } = map;
     const r = radius / scale;
@@ -86,11 +91,11 @@ export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, o
         .filter((n): n is { c: NamedCluster; box: Box; mix: ReturnType<typeof segmentMix> } => n.box !== null && n.mix.length > 0);
     const active = named.find((n) => n.c.id === activeCluster);
     useEffect(() => {
-        if (active && svgLayer) zoomTo(active.box, MAX_K);
+        if (active && svgLayer) zoomTo(roomRight(active.box, inset), MAX_K);
         // Zoom when the requested cluster changes, not on every pan.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeCluster, svgLayer, active?.box[0][0]]);
-    const go = (c: NamedCluster, box: Box) => { zoomTo(box, MAX_K); onCluster?.(c.id); };
+    const go = (c: NamedCluster, box: Box) => { zoomTo(roomRight(box, inset), MAX_K); onCluster?.(c.id); };
     // On-map boxes only once they are big enough to read; the index under
     // the map always lists them.
     const boxed = (hubbed || !boxes ? [] : named).map((n) => ({ ...n, screen: [toScreen(n.box[0], zoom), toScreen(n.box[1], zoom)] as Box }))
@@ -99,7 +104,11 @@ export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, o
         const members = g.ids.flatMap((id) => byId.get(id) ?? []);
         const mix = segmentMix(members);
         const name = hubbed ? hubName(members.map(hubOf)) : groupName(members, boxes ? clusters : [], !oneRegion);
-        return { g, key: g.ids.join("|"), members, mix, size: mixSize(mix, GROUP_TILE), name };
+        // Drill only when every member is in the same hub; a marker that
+        // merged neighbouring hubs (or stray sites) zooms in instead.
+        const hubIds = new Set(members.map((m) => hubOf(m)?.id));
+        const hub = hubbed && hubIds.size === 1 ? [...hubIds][0] : undefined;
+        return { g, key: g.ids.join("|"), members, mix, size: mixSize(mix, GROUP_TILE), name, hub };
     });
     // Each tag takes a free corner of its box, clear of every marker and of
     // the tags placed before it; with none free, only the box draws.
@@ -160,7 +169,7 @@ export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, o
             </button>)}
         </div>, belowLayer) : null}
         <Pins pins={singles} selectedId={selectedId} onSelect={onSelect} table={false} labels={nameSites} />
-        {multi.map(({ g, key, members, mix, name }) => {
+        {multi.map(({ g, key, members, mix, name, hub }) => {
             const box = boxOf(g.ids.map((id) => base.get(id)).filter((p): p is Point => !!p));
             // Still overlapping at full zoom (several sites share a city): a
             // click lists the members instead of zooming.
@@ -170,7 +179,7 @@ export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, o
                 <button type="button" className={`mk-cluster${hasSelected ? " is-selected" : ""}`} data-group={key}
                     aria-label={`${name ?? `${members.length} sites`}: ${mixPhrase(mix)}. ${tiny ? "List them" : "Zoom in"}`}
                     aria-expanded={tiny ? open === key : undefined}
-                    onClick={() => (tiny ? setOpen(open === key ? null : key) : zoomTo(box, MAX_K))}>
+                    onClick={() => (hub && onHub?.(hub) ? undefined : tiny ? setOpen(open === key ? null : key) : zoomTo(roomRight(box, inset), MAX_K))}>
                     <SegmentMix mix={mix} size={GROUP_TILE} />
                 </button>
                 {tiny && open === key ? <ul className="mk-group-list">

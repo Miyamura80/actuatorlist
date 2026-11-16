@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { BOM_AS_OF, BOM_CASES, BOM_PATH, bomCasePath, caseWithMaker, caseWithNode } from "../../../../../src/supply-chain/bom";
 import { idiotText } from "../../../../../src/supply-chain/bom/format";
 import { heroOf, usesOf } from "../../../../../src/supply-chain/bom/used-in";
@@ -8,6 +8,7 @@ import { PublicHeader } from "../../../components/PublicHeader";
 import { FootnotesProvider } from "../../../components/supply-chain/footnotes";
 import { SourcedValue } from "../../../components/supply-chain/SourcedValue";
 import { SourcesSection } from "../../../components/supply-chain/SourcesSection";
+import { Fold } from "../../../components/ui/Fold";
 import { readSelection } from "../../../lib/supply-chain-selection";
 import { BomHeroImage, CardUsedIn } from "./BomUses";
 import { MarginBar } from "./MarginBar";
@@ -16,12 +17,21 @@ import { money, usdText } from "./PartPanel";
 
 const TITLE = "What an actuator is really made of";
 
+// Compare sankeys share one scale: the priciest case gets FLOW_H pixels and
+// the rest shrink with their price, down to a floor that keeps labels legible.
+// Below the floor, valueMax shrinks the bands to the same pixels per dollar.
+const FLOW_H = 320;
+const FLOW_MIN_H = 150;
+function flowHeight(price: number, max: number): { height: number; valueMax: number } {
+    const height = Math.round(Math.max(FLOW_MIN_H, (FLOW_H * price) / max));
+    return { height, valueMax: (max * height) / FLOW_H };
+}
+
 // /bom: the three teardowns side by side. #node=<id> (the link from a
 // /manufacturing step) forwards to the first case with that node, and
 // ?company=<id> (the company drawer's link) to the first node it makes.
 export function BomIndex({ menuOpen }: { menuOpen: boolean }) {
     const models = useMemo(() => BOM_CASES.map(caseModel), []);
-    const [compare, setCompare] = useState(true);
     useEffect(() => {
         const node = readSelection(window.location.hash, "node");
         const c = node ? caseWithNode(node) : undefined;
@@ -46,7 +56,8 @@ export function BomIndex({ menuOpen }: { menuOpen: boolean }) {
                 <header className="tool-head bm-head">
                     <p className="tool-kicker">Supply chain · Bill of materials · as of {BOM_AS_OF}</p>
                     <h1>{TITLE}</h1>
-                    <p className="tool-lede">Three actuators taken apart, part by part: what each costs, the raw material inside, how it is made, who makes it and who keeps the price.</p>
+                    <p className="tool-lede">Three actuators, part by part: cost, metal, maker.</p>
+                    <a className="bm-cta cta-primary" href="/api/v1/bom">Get the data</a>
                 </header>
                 <ol className="bm-grid">
                     {models.map(({ c, metrics }) => {
@@ -54,36 +65,41 @@ export function BomIndex({ menuOpen }: { menuOpen: boolean }) {
                         const uses = usesOf(c);
                         const hero = heroOf(c, uses);
                         return <li key={c.slug} className="bm-card">
+                            <BomHeroImage hero={{ ...hero, href: bomCasePath(c.slug) }} />
                             <a className="bm-card-link" href={bomCasePath(c.slug)}>
                                 <span className="bm-card-kicker">{c.short}</span>
                                 <span className="bm-card-name">{c.name}</span>
                             </a>
-                            <BomHeroImage hero={{ ...hero, href: bomCasePath(c.slug) }} />
-                            <CardUsedIn uses={uses} />
-                            <dl className="bm-stats is-card">
-                                <div><dt>Price</dt><dd><SourcedValue value={c.price} format={usdText} /></dd></div>
-                                <div><dt>Raw material</dt><dd><span className="sc-num">{money(root?.raw ?? 0)}</span></dd></div>
-                                <div><dt>Idiot index</dt><dd><b className="bm-idiot">{root?.idiot ? idiotText(root.idiot) : "n/a"}</b></dd></div>
-                            </dl>
-                            <p className="bm-card-take">{c.takeaway}</p>
+                            <p className="bm-card-idiot" aria-label={`Idiot index ${root?.idiot ? idiotText(root.idiot) : "n/a"}`}>
+                                <b className="bm-idiot">{root?.idiot ? idiotText(root.idiot) : "n/a"}</b>
+                                <span>idiot index</span>
+                            </p>
                             <MarginBar c={c} compact />
+                            <Fold className="bm-card-more" title="Price and robots"
+                                headline={<SourcedValue value={c.price} format={usdText} />}>
+                                <dl className="bm-stats is-card">
+                                    <div><dt>Price</dt><dd><SourcedValue value={c.price} format={usdText} /></dd></div>
+                                    <div><dt>Raw material</dt><dd><span className="sc-num">{money(root?.raw ?? 0)}</span></dd></div>
+                                </dl>
+                                <p className="bm-card-take">{c.takeaway}</p>
+                                <CardUsedIn uses={uses} />
+                            </Fold>
                         </li>;
                     })}
                 </ol>
                 <section className="bm-sec-block" aria-labelledby="bm-compare-h">
-                    <div className="bm-sec-head">
-                        <h2 id="bm-compare-h">Flows at one scale</h2>
-                        <button type="button" className="bm-toggle-one" aria-expanded={compare} aria-controls="bm-compare" onClick={() => setCompare((v) => !v)}>Compare</button>
-                    </div>
-                    <p className="bm-sub">The parts each actuator is built from, drawn against the most expensive case so band widths compare across actuators.</p>
-                    <div className="bm-compare" id="bm-compare" hidden={!compare}>
-                        {compare ? models.map((m) => {
+                    <h2 id="bm-compare-h">Flows at one scale</h2>
+                    <p className="bm-sub">Height follows price.</p>
+                    <div className="bm-compare" id="bm-compare">
+                        {models.map((m) => {
                             const f = topSankey(m);
+                            const size = flowHeight(m.c.price.value, max);
                             return <div key={m.c.slug} className="bm-compare-one">
                                 <h3><a href={bomCasePath(m.c.slug)}>{m.c.short}</a></h3>
-                                <ValueSankey nodes={f.nodes} links={f.links} label={m.c.name} format={money} valueMax={max} height={260} orientation="horizontal" />
+                                <ValueSankey nodes={f.nodes} links={f.links} label={m.c.name} format={money}
+                                    valueMax={size.valueMax} height={size.height} orientation="horizontal" />
                             </div>;
-                        }) : null}
+                        })}
                     </div>
                 </section>
                 <details className="bm-method">
@@ -95,7 +111,7 @@ export function BomIndex({ menuOpen }: { menuOpen: boolean }) {
                         <li><b>Pictures</b> The actuator's own catalog photo where the site has one, else our 3D model of it. Robots that use it are named, with a photo where the catalog has one.</li>
                     </ul>
                 </details>
-                <p className="bm-foot"><a href={`${BOM_PATH}.md`}>Read as a table</a> · <a href="/api/v1/bom">Get the data</a></p>
+                <p className="bm-foot"><a href={`${BOM_PATH}.md`}>Read as a table</a></p>
                 <SourcesSection />
             </main>
         </FootnotesProvider>
