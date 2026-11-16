@@ -232,7 +232,11 @@ export function CountryPage({ page, menuOpen = false, topology }: {
                             table={`${where} sites`}
                             labels={busy && !region ? "zoomed" : true}
                             hubs={hubs}
-                            onHub={(id) => (isCluster(id) ? toCluster(id) : undefined)}
+                            onHub={(id) => {
+                                if (!isCluster(id)) return false;
+                                toCluster(id);
+                                return true;
+                            }}
                             inset={inset}
                             boxes={!region}
                         />

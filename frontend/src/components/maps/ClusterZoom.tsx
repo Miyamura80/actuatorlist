@@ -31,9 +31,9 @@ export interface ClusterZoomProps {
     // Named cluster boxes and tags on the map (false: the index under the
     // map still lists them), e.g. off when zoomed into one region.
     boxes?: boolean;
-    // A hub marker click: the page drills into that hub (e.g. a named
-    // cluster) instead of the marker only zooming.
-    onHub?: (id: string) => void;
+    // A hub marker click: the page may drill into that hub (e.g. a named
+    // cluster). Returns true when it did; otherwise the marker zooms in.
+    onHub?: (id: string) => boolean;
     // Share of the frame's width a side panel covers: zooms keep clear of it.
     inset?: number;
 }
@@ -104,7 +104,10 @@ export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, o
         const members = g.ids.flatMap((id) => byId.get(id) ?? []);
         const mix = segmentMix(members);
         const name = hubbed ? hubName(members.map(hubOf)) : groupName(members, boxes ? clusters : [], !oneRegion);
-        const hub = hubbed ? members.map(hubOf).find((h) => h)?.id : undefined;
+        // Drill only when every member is in the same hub; a marker that
+        // merged neighbouring hubs (or stray sites) zooms in instead.
+        const hubIds = new Set(members.map((m) => hubOf(m)?.id));
+        const hub = hubbed && hubIds.size === 1 ? [...hubIds][0] : undefined;
         return { g, key: g.ids.join("|"), members, mix, size: mixSize(mix, GROUP_TILE), name, hub };
     });
     // Each tag takes a free corner of its box, clear of every marker and of
@@ -176,7 +179,7 @@ export function ClusterZoom({ pins, radius = 28, clusters = [], activeCluster, o
                 <button type="button" className={`mk-cluster${hasSelected ? " is-selected" : ""}`} data-group={key}
                     aria-label={`${name ?? `${members.length} sites`}: ${mixPhrase(mix)}. ${tiny ? "List them" : "Zoom in"}`}
                     aria-expanded={tiny ? open === key : undefined}
-                    onClick={() => (hub && onHub ? onHub(hub) : tiny ? setOpen(open === key ? null : key) : zoomTo(roomRight(box, inset), MAX_K))}>
+                    onClick={() => (hub && onHub?.(hub) ? undefined : tiny ? setOpen(open === key ? null : key) : zoomTo(roomRight(box, inset), MAX_K))}>
                     <SegmentMix mix={mix} size={GROUP_TILE} />
                 </button>
                 {tiny && open === key ? <ul className="mk-group-list">

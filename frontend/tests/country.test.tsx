@@ -12,6 +12,7 @@ import { readCountryState, withCountryState } from "../src/pages/supply-chain/co
 
 const JP = JSON.parse(readFileSync(new URL("../public/geo/jp-admin1.json", import.meta.url), "utf8")) as MapTopology;
 const JAPAN = getCountryPage("japan") as Page;
+const KR = JSON.parse(readFileSync(new URL("../public/geo/kr-admin1.json", import.meta.url), "utf8")) as MapTopology;
 const COMPANIES = countryCompanies("JP");
 
 const setURL = (path: string) =>
@@ -222,6 +223,23 @@ test("a busy country opens on regional hubs, named after them", () => {
     expect(hubs.some((l) => l.startsWith("Great Lakes"))).toBe(true);
     // No scattered single pins while zoomed out: every site sits in a hub.
     expect(c.querySelectorAll(".mk-pin")).toHaveLength(0);
+});
+
+test("a hub drills into its cluster only when it is one whole cluster; otherwise it zooms", () => {
+    setURL("/korea");
+    const kr = render(<CountryPage page={getCountryPage("korea") as Page} topology={KR} />).container;
+    const whole = [...kr.querySelectorAll(".mk-cluster")].find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Daejeon and Sejong")) as HTMLElement;
+    act(() => { fireEvent.click(whole); });
+    expect(readCountryState(window.location.search).cluster).toBe("daejeon-sejong");
+    cleanup();
+    setURL("/us");
+    const us = mountUS().container;
+    const lakes = [...us.querySelectorAll(".mk-cluster")].find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Great Lakes")) as HTMLElement;
+    act(() => { fireEvent.click(lakes); });
+    // No cluster is named "Great Lakes": the URL stays put and the marker
+    // falls back to zooming in (no drawer opens).
+    expect(readCountryState(window.location.search).cluster).toBeNull();
+    expect(us.querySelector(".mk-drawer")).toBeNull();
 });
 
 test("?region= zooms to a state: pins, links and table narrow to it, and there is a way back", () => {
