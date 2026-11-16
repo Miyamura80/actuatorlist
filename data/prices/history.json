@@ -71,6 +71,16 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "cubemars-ak10-9",
+            "date": "2026-11-16",
+            "priceUsd": 698.9,
+            "currency": "USD",
+            "originalPrice": 698.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/product/ak10-9-v3-0-kv60-robotic-actuator.html",
+            "method": "jsonld"
+        },
+        {
             "actuatorId": "cubemars-ak60-6",
             "date": "2025-06-25",
             "priceUsd": 298.9,
@@ -139,6 +149,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260421140020/https://www.cubemars.com/product/ak60-6-v3-0-kv80-robotic-actuator.html",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "cubemars-ak60-6",
+            "date": "2026-11-16",
+            "priceUsd": 229.9,
+            "currency": "USD",
+            "originalPrice": 229.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/product/ak60-6-v3-0-kv80-robotic-actuator.html",
+            "method": "jsonld"
         },
         {
             "actuatorId": "cubemars-ak70-10",
@@ -211,6 +231,16 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "cubemars-ak70-10",
+            "date": "2026-11-16",
+            "priceUsd": 398.9,
+            "currency": "USD",
+            "originalPrice": 398.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/product/ak70-10-kv100-robotic-actuator.html",
+            "method": "jsonld"
+        },
+        {
             "actuatorId": "cubemars-ak80-6",
             "date": "2025-07-13",
             "priceUsd": 469.9,
@@ -269,6 +299,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20261011042112/https://www.cubemars.com/product/ak80-6-kv100-robotic-actuator.html",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "cubemars-ak80-6",
+            "date": "2026-11-16",
+            "priceUsd": 469.9,
+            "currency": "USD",
+            "originalPrice": 469.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/product/ak80-6-kv100-robotic-actuator.html",
+            "method": "jsonld"
         },
         {
             "actuatorId": "cubemars-ak80-9",
@@ -351,6 +391,26 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "cubemars-ak80-9",
+            "date": "2026-11-16",
+            "priceUsd": 479.9,
+            "currency": "USD",
+            "originalPrice": 479.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/product/ak80-9-v3-0-robotic-actuator.html",
+            "method": "jsonld"
+        },
+        {
+            "actuatorId": "cubemars-r60-kv115",
+            "date": "2026-11-16",
+            "priceUsd": 177.9,
+            "currency": "USD",
+            "originalPrice": 177.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/goods-943-R60+KV115.html",
+            "method": "selector"
+        },
+        {
             "actuatorId": "cubemars-ri60-kv120",
             "date": "2025-07-13",
             "priceUsd": 98.9,
@@ -379,6 +439,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260421141157/https://www.cubemars.com/product/ri60-kv120-frameless-inrunner-torque-motor.html",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "cubemars-ri60-kv120",
+            "date": "2026-11-16",
+            "priceUsd": 98.9,
+            "currency": "USD",
+            "originalPrice": 98.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/product/ri60-kv120-frameless-inrunner-torque-motor.html",
+            "method": "jsonld"
         },
         {
             "actuatorId": "cubemars-ri80-v2-kv75",
@@ -441,6 +511,16 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "cubemars-ri80-v2-kv75",
+            "date": "2026-11-16",
+            "priceUsd": 132.9,
+            "currency": "USD",
+            "originalPrice": 132.9,
+            "fxRate": 1,
+            "url": "https://www.cubemars.com/product/ri80-v2-0-kv75-frameless-inrunner-torque-motor.html",
+            "method": "jsonld"
+        },
+        {
             "actuatorId": "damiao-dm-j10010-2ec",
             "date": "2025-08-07",
             "priceUsd": 503,
@@ -469,6 +549,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260514163342/https://store.foxtech.com/dm-j10010-2ec-mit-driven-brushless-servo-joint-motor/",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "damiao-dm-j10010-2ec",
+            "date": "2026-11-16",
+            "priceUsd": 357,
+            "currency": "USD",
+            "originalPrice": 357,
+            "fxRate": 1,
+            "url": "https://store.foxtech.com/dm-j10010-2ec-mit-driven-brushless-servo-joint-motor/",
+            "method": "selector"
         },
         {
             "actuatorId": "damiao-dm-j4340p-2ec",
@@ -520,6 +610,26 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260714095239/https://www.seeedstudio.com/DM4340P-Actuator-p-6663.html",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "dynamixel-ph54-200-s500-r",
+            "date": "2026-11-16",
+            "priceUsd": 3541.89,
+            "currency": "USD",
+            "originalPrice": 3541.89,
+            "fxRate": 1,
+            "url": "https://robotis.us/products/dynamixel-ph54-200-s500-r",
+            "method": "shopify"
+        },
+        {
+            "actuatorId": "dynamixel-pm54-060-s250-r",
+            "date": "2026-11-16",
+            "priceUsd": 2196.39,
+            "currency": "USD",
+            "originalPrice": 2196.39,
+            "fxRate": 1,
+            "url": "https://robotis.us/products/dynamixel-pm54-060-s250-r",
+            "method": "shopify"
         },
         {
             "actuatorId": "dynamixel-xc430-w150-t",
@@ -740,6 +850,26 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260514132731/https://www.robotis.us/dynamixel-xc430-w150-t/",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "dynamixel-xc430-w150-t",
+            "date": "2026-11-16",
+            "priceUsd": 137.89,
+            "currency": "USD",
+            "originalPrice": 137.89,
+            "fxRate": 1,
+            "url": "https://www.robotis.us/dynamixel-xc430-w150-t/",
+            "method": "jsonld"
+        },
+        {
+            "actuatorId": "dynamixel-xc430-w240-t",
+            "date": "2026-11-16",
+            "priceUsd": 137.89,
+            "currency": "USD",
+            "originalPrice": 137.89,
+            "fxRate": 1,
+            "url": "https://robotis.us/products/dynamixel-xc430-w240-t",
+            "method": "shopify"
         },
         {
             "actuatorId": "dynamixel-xh540-w270-t",
@@ -992,6 +1122,26 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "dynamixel-xh540-w270-t",
+            "date": "2026-11-16",
+            "priceUsd": 620.89,
+            "currency": "USD",
+            "originalPrice": 620.89,
+            "fxRate": 1,
+            "url": "https://www.robotis.us/dynamixel-xh540-w270-t/",
+            "method": "jsonld"
+        },
+        {
+            "actuatorId": "dynamixel-xl330-m077-t",
+            "date": "2026-11-16",
+            "priceUsd": 27.49,
+            "currency": "USD",
+            "originalPrice": 27.49,
+            "fxRate": 1,
+            "url": "https://robotis.us/products/dynamixel-xl330-m077-t",
+            "method": "shopify"
+        },
+        {
             "actuatorId": "dynamixel-xl330-m288-t",
             "date": "2021-02-18",
             "priceUsd": 19.9,
@@ -1190,6 +1340,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260612103142/https://www.robotis.us/dynamixel-xl330-m288-t/",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "dynamixel-xl330-m288-t",
+            "date": "2026-11-16",
+            "priceUsd": 27.49,
+            "currency": "USD",
+            "originalPrice": 27.49,
+            "fxRate": 1,
+            "url": "https://www.robotis.us/dynamixel-xl330-m288-t/",
+            "method": "jsonld"
         },
         {
             "actuatorId": "dynamixel-xl430-w250-t",
@@ -2122,6 +2282,16 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "dynamixel-xm430-w350-t",
+            "date": "2026-11-16",
+            "priceUsd": 310.39,
+            "currency": "USD",
+            "originalPrice": 310.39,
+            "fxRate": 1,
+            "url": "https://www.robotis.us/dynamixel-xm430-w350-t/",
+            "method": "jsonld"
+        },
+        {
             "actuatorId": "dynamixel-xm540-w270-t",
             "date": "2018-12-02",
             "priceUsd": 349.9,
@@ -2392,6 +2562,16 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "dynamixel-xm540-w270-t",
+            "date": "2026-11-16",
+            "priceUsd": 482.89,
+            "currency": "USD",
+            "originalPrice": 482.89,
+            "fxRate": 1,
+            "url": "https://www.robotis.us/dynamixel-xm540-w270-t/",
+            "method": "jsonld"
+        },
+        {
             "actuatorId": "feetech-sts3215-c001",
             "date": "2025-06-13",
             "priceUsd": 20,
@@ -2552,6 +2732,16 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "hiwonder-lx-16a",
+            "date": "2026-11-16",
+            "priceUsd": 16.99,
+            "currency": "USD",
+            "originalPrice": 16.99,
+            "fxRate": 1,
+            "url": "https://www.hiwonder.com/products/lx-16a",
+            "method": "shopify"
+        },
+        {
             "actuatorId": "ipower-gm8112-80t",
             "date": "2023-12-03",
             "priceUsd": 129.9,
@@ -2620,6 +2810,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260607140007/https://shop.iflight.com/ipower-motor-gm8112-brushless-gimbal-motor-pro195",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "ipower-gm8112-80t",
+            "date": "2026-11-16",
+            "priceUsd": 129.9,
+            "currency": "USD",
+            "originalPrice": 129.9,
+            "fxRate": 1,
+            "url": "https://shop.iflight.com/ipower-motor-gm8112-brushless-gimbal-motor-pro195",
+            "method": "jsonld"
         },
         {
             "actuatorId": "mjbots-moteus-c1",
@@ -2710,6 +2910,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20251209160612/https://mjbots.com/products/moteus-c1",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "mjbots-moteus-c1",
+            "date": "2026-11-16",
+            "priceUsd": 69,
+            "currency": "USD",
+            "originalPrice": 69,
+            "fxRate": 1,
+            "url": "https://mjbots.com/products/moteus-c1",
+            "method": "shopify"
         },
         {
             "actuatorId": "mjbots-moteus-r4-11",
@@ -2923,6 +3133,16 @@
             "method": "wayback"
         },
         {
+            "actuatorId": "mjbots-moteus-r4-11",
+            "date": "2026-11-16",
+            "priceUsd": 94,
+            "currency": "USD",
+            "originalPrice": 94,
+            "fxRate": 1,
+            "url": "https://mjbots.com/products/moteus-r4-11",
+            "method": "shopify"
+        },
+        {
             "actuatorId": "mjbots-qdd100",
             "date": "2022-08-16",
             "priceUsd": 539,
@@ -3094,6 +3314,17 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20260515133239/https://mjbots.com/products/qdd100-beta-3",
             "method": "wayback",
+            "outOfStock": true
+        },
+        {
+            "actuatorId": "mjbots-qdd100",
+            "date": "2026-11-16",
+            "priceUsd": 879,
+            "currency": "USD",
+            "originalPrice": 879,
+            "fxRate": 1,
+            "url": "https://mjbots.com/products/qdd100-beta-3",
+            "method": "shopify",
             "outOfStock": true
         },
         {
@@ -3275,6 +3506,17 @@
             "url": "https://web.archive.org/web/20260905204705/https://shop.odriverobotics.com/products/odrive-pro",
             "method": "wayback",
             "variant": "ODrive Pro"
+        },
+        {
+            "actuatorId": "odrive-pro",
+            "date": "2026-11-16",
+            "priceUsd": 229,
+            "currency": "USD",
+            "originalPrice": 229,
+            "fxRate": 1,
+            "url": "https://shop.odriverobotics.com/products/odrive-pro",
+            "method": "shopify",
+            "variant": "ODrive Pro Screw terminal"
         },
         {
             "actuatorId": "odrive-s1",
@@ -3466,6 +3708,17 @@
             "variant": "ODrive S1"
         },
         {
+            "actuatorId": "odrive-s1",
+            "date": "2026-11-16",
+            "priceUsd": 149,
+            "currency": "USD",
+            "originalPrice": 149,
+            "fxRate": 1,
+            "url": "https://shop.odriverobotics.com/products/odrive-s1",
+            "method": "shopify",
+            "variant": "ODrive S1 Screw Terminals"
+        },
+        {
             "actuatorId": "odrive-v36",
             "date": "2024-09-10",
             "priceUsd": 259,
@@ -3533,6 +3786,18 @@
             "method": "wayback",
             "outOfStock": true,
             "variant": "ODrive v3.6 (NRND)"
+        },
+        {
+            "actuatorId": "odrive-v36",
+            "date": "2026-11-16",
+            "priceUsd": 259,
+            "currency": "USD",
+            "originalPrice": 259,
+            "fxRate": 1,
+            "url": "https://shop.odriverobotics.com/products/odrive-v36",
+            "method": "shopify",
+            "outOfStock": true,
+            "variant": "ODrive v3.6 (NRND) 56V / Yes"
         },
         {
             "actuatorId": "robstride-00",
@@ -4125,6 +4390,16 @@
             "fxRate": 1,
             "url": "https://web.archive.org/web/20261008232552/https://www.waveshare.com/st3215-servo.htm",
             "method": "wayback"
+        },
+        {
+            "actuatorId": "waveshare-st3215",
+            "date": "2026-11-16",
+            "priceUsd": 16.99,
+            "currency": "USD",
+            "originalPrice": 16.99,
+            "fxRate": 1,
+            "url": "https://www.waveshare.com/st3215-servo.htm",
+            "method": "selector"
         },
         {
             "actuatorId": "xiaomi-cybergear",
