@@ -37,11 +37,12 @@ assert "Frequently asked questions" in get("/faq.md")[0]
 assert "Frequently asked questions" not in get("/index.md")[0]
 assert "https://actuatorlist.com/faq" in get("/sitemap.xml")[0]
 assert 'data-ga4-id' not in home, "Analytics must default off in smoke image"
+assert 'class="site-stage">beta</span>' in home, "Missing beta badge in the public header"
 assets = re.findall(r'src="(/assets/[^" ]+\.js)"', home)
 assert assets, "No production application bundle"
 for asset in assets:
     bundle, _ = get(asset)
-    assert "alpha-tag" in bundle, "Missing current sidebar UI"
+    assert "site-stage" in bundle and "sidebar-source" in bundle, "Missing current header or sidebar UI"
     assert "hero-content" in get(re.search(r'href="(/assets/[^" ]+\.css)"', home).group(1))[0]
 gallery, _ = get("/actuators")
 assert 'rel="preload" as="image" href="/actuator-images/steadywin-gim8108-8.webp"' in gallery

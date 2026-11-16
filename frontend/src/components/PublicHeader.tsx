@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import { PUBLIC_LINKS, headerMenus } from "../../../src/public-navigation";
+import { CODE_LICENSE } from "../../../src/repo-link";
 import { BrandMark } from "./BrandMark";
+import { GitHubMark, GitHubStar } from "./GitHubMark";
+import { HeaderIcon } from "./nav/HeaderIcon";
 import { HeaderMenu } from "./nav/HeaderMenu";
 
 export function PublicHeader({ path, initialOpen = false, supplyChainPreview = false }: { path: string; initialOpen?: boolean; supplyChainPreview?: boolean }) {
@@ -19,8 +22,9 @@ export function PublicHeader({ path, initialOpen = false, supplyChainPreview = f
     return <header className="site-header">
         <a href="/" className="site-brand" aria-label="actuatorlist home">
             <BrandMark size={24} />
-            <span><b>actuator</b>list.com</span><span className="alpha-tag">alpha</span>
+            <span><b>actuator</b>list.com</span><span className="site-stage">beta</span>
         </a>
+        <a href={CODE_LICENSE.href} className="open-source-link"><GitHubMark /><GitHubStar />{CODE_LICENSE.label}</a>
         <details className="site-menu" open={initialOpen} ref={ref} onKeyDown={(event) => {
             if (event.key === "Escape" && event.currentTarget.open) {
                 event.currentTarget.open = false;
@@ -32,7 +36,7 @@ export function PublicHeader({ path, initialOpen = false, supplyChainPreview = f
                 {PUBLIC_LINKS.map(([href, label]) => <a key={href} href={href}
                     aria-current={path === href ? "page" : undefined}
                     onClick={() => { if (ref.current) ref.current.open = false; }}>
-                    {label}
+                    <HeaderIcon item={href} />{label}
                 </a>)}
                 {headerMenus(supplyChainPreview).map((menu) => <HeaderMenu key={menu.id} menu={menu} path={path} onNavigate={() => { if (ref.current) ref.current.open = false; }} />)}
             </nav>

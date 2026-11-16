@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { HeaderMenu as Menu } from "../../../../src/public-navigation";
+import { HeaderIcon } from "./HeaderIcon";
 
 // One dropdown in the public header ("Market intel", "Supply chain"). Links
 // that are not live yet (supply-chain preview only) render inert.
@@ -31,7 +32,7 @@ export function HeaderMenu({ menu, path, onNavigate }: {
             event.currentTarget.querySelector("summary")?.focus();
         }
     }}>
-        <summary className={current ? "is-current" : undefined}>{menu.label}</summary>
+        <summary className={current ? "is-current" : undefined}><HeaderIcon item={menu.id} />{menu.label}</summary>
         <div className="site-sub-panel">
             {menu.groups.map((g) => <section key={g.label}>
                 <h3>{g.label}</h3>

@@ -1,6 +1,24 @@
 // Dependency-neutral navigation shared by runtime HTML and the browser build.
-import { GITHUB_MARK_SVG, REPO_URL, isRepoHref } from "./repo-link";
+import {
+    CODE_LICENSE,
+    GITHUB_MARK_SVG,
+    GITHUB_STAR_SVG,
+    REPO_URL,
+    isRepoHref,
+} from "./repo-link";
 import { LIVE_COUNTRY_PATHS } from "./supply-chain/country-pages";
+
+// Decorative 24 × 24 outline icons for the top-level navigation.
+export const HEADER_ICON_PATHS: Readonly<Record<string, string | undefined>> = {
+    "/": "M8 21h8m-4-7v7M7 4h10v5c0 3-2 5-5 5s-5-2-5-5V4Zm0 2H4v2a4 4 0 0 0 4 4m9-6h3v2a4 4 0 0 1-4 4",
+    "/robots":
+        "M12 5V2m-8 9H2m20 0h-2M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Zm4 3v2m8-2v2m-7 4h6",
+    "/actuators":
+        "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM10 3h4l.7 3 2 .9 2.7-1.6 2 3.4-2.1 2.1v2.4l2.1 2.1-2 3.4-2.7-1.6-2 .9-.7 3h-4l-.7-3-2-.9-2.7 1.6-2-3.4 2.1-2.1v-2.4L2.6 8.7l2-3.4 2.7 1.6 2-.9L10 3Z",
+    "market-intel": "M3 3v18h18M7 15l4-4 4 2 5-7m-4 0h4v4",
+    "supply-chain":
+        "M9 15l6-6m-4 8-2 2a3.5 3.5 0 0 1-5-5l4-4a3.5 3.5 0 0 1 5 0m0-3 2-2a3.5 3.5 0 0 1 5 5l-4 4a3.5 3.5 0 0 1-5 0",
+};
 
 export const PUBLIC_LINKS = [
     ["/", "Leaderboard"],
@@ -162,13 +180,21 @@ export const FOOTER_GROUPS = [
         : []),
 ] as const;
 
+function headerIcon(item: string): string {
+    const icon = HEADER_ICON_PATHS[item];
+    return icon
+        ? `<svg class="site-nav-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="${icon}"/></svg>`
+        : "";
+}
+
 function menuHtml(menu: HeaderMenu, path: string): string {
     const current = menu.groups.some((g) => g.links.some((l) => l.href === path));
-    return `<details class="site-sub" data-menu="${menu.id}"><summary${current ? ' class="is-current"' : ""}>${menu.label}</summary><div class="site-sub-panel">${menu.groups.map((g) => `<section><h3>${g.label}</h3>${g.links.map((l) => `<a href="${l.href}"${path === l.href ? ' aria-current="page"' : ""}>${l.label}</a>`).join("")}</section>`).join("")}</div></details>`;
+    return `<details class="site-sub" data-menu="${menu.id}"><summary${current ? ' class="is-current"' : ""}>${headerIcon(menu.id)}${menu.label}</summary><div class="site-sub-panel">${menu.groups.map((g) => `<section><h3>${g.label}</h3>${g.links.map((l) => `<a href="${l.href}"${path === l.href ? ' aria-current="page"' : ""}>${l.label}</a>`).join("")}</section>`).join("")}</div></details>`;
 }
 
 export function publicHeader(path: string): string {
-    return `<header class="site-header"><a href="/" class="site-brand" aria-label="actuatorlist home"><span><b>actuator</b>list.com</span><span class="alpha-tag">alpha</span></a><details class="site-menu"><summary aria-label="Menu" aria-controls="public-navigation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></summary><nav id="public-navigation" aria-label="Site">${PUBLIC_LINKS.map(([href, label]) => `<a href="${href}"${path === href ? ' aria-current="page"' : ""}>${label}</a>`).join("")}${headerMenus()
+    const sourceLink = `<a href="${CODE_LICENSE.href}" class="open-source-link">${GITHUB_MARK_SVG}${GITHUB_STAR_SVG}${CODE_LICENSE.label}</a>`;
+    return `<header class="site-header"><a href="/" class="site-brand" aria-label="actuatorlist home"><span><b>actuator</b>list.com</span><span class="site-stage">beta</span></a>${sourceLink}<details class="site-menu"><summary aria-label="Menu" aria-controls="public-navigation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></summary><nav id="public-navigation" aria-label="Site">${PUBLIC_LINKS.map(([href, label]) => `<a href="${href}"${path === href ? ' aria-current="page"' : ""}>${headerIcon(href)}${label}</a>`).join("")}${headerMenus()
         .map((m) => menuHtml(m, path))
         .join("")}</nav></details></header>`;
 }
