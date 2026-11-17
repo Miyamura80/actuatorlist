@@ -227,7 +227,25 @@ export const FOOTER_MORE: readonly FooterGroup[] = [
     },
 ];
 
-// Every footer link, visible or folded.
+export function footerMore(path?: string): readonly FooterGroup[] {
+    if (path !== "/") return FOOTER_MORE;
+    return FOOTER_MORE.map((group) =>
+        group.label === "Catalog"
+            ? {
+                  ...group,
+                  links: [
+                      ...group.links,
+                      [
+                          "/actuators/dynamixel-xl330-m288-t",
+                          "Dynamixel XL330-M288-T specs",
+                      ],
+                  ],
+              }
+            : group,
+    );
+}
+
+// Every common footer link, visible or folded.
 export const FOOTER_LINKS: readonly (readonly [string, string])[] = [
     ...FOOTER_GROUPS,
     ...FOOTER_MORE,
@@ -261,6 +279,6 @@ export function publicHeader(path: string): string {
         .join("")}</nav></details></header>`;
 }
 
-export function publicFooter(): string {
-    return `<footer class="site-footer"><nav aria-label="Footer">${footerLinksHtml(FOOTER_GROUPS)}<details class="site-footer-more"><summary>All pages</summary><div class="site-footer-more-body">${footerLinksHtml(FOOTER_MORE)}</div></details></nav></footer>`;
+export function publicFooter(path?: string): string {
+    return `<footer class="site-footer"><nav aria-label="Footer">${footerLinksHtml(FOOTER_GROUPS)}<details class="site-footer-more"><summary>All pages</summary><div class="site-footer-more-body">${footerLinksHtml(footerMore(path))}</div></details></nav></footer>`;
 }

@@ -102,7 +102,6 @@ export function homeBody(): string {
         `## Browse the catalog\n\n${bullets([
             `${mdLink("Leaderboard", absoluteUrl("/"))}: torque density rankings and a torque versus cost scatter.`,
             `${mdLink("Actuators", absoluteUrl("/actuators"))}: every entry as a photo gallery or one sortable table.`,
-            `Featured actuator: ${mdLink("Dynamixel XL330-M288-T specs", absoluteUrl(actuatorPath("dynamixel-xl330-m288-t")))}.`,
             `${mdLink("Robots", absoluteUrl("/robots"))}: which motors sit in each joint of real robots.`,
             `${mdLink("For AI agents", absoluteUrl(PATHS.agentsPage))}: REST API, MCP server and markdown views.`,
         ])}`,

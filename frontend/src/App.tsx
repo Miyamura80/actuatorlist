@@ -87,9 +87,6 @@ export default function App({ menuOpen = false }: { menuOpen?: boolean }) {
                         <BrandGlyph className="block-tag" />
                         Highlights
                     </h2>
-                    <p className="block-sub">
-                        Featured actuator: <a href="/actuators/dynamixel-xl330-m288-t">Dynamixel XL330-M288-T specs</a>
-                    </p>
                     <HighlightCards actuators={ACTUATORS} onSelect={openById} />
                 </section>
 
@@ -115,7 +112,7 @@ export default function App({ menuOpen = false }: { menuOpen?: boolean }) {
 
             <DetailPanel actuator={selected} onClose={() => setSelected(null)} />
         </div>
-        <PublicFooter />
+        <PublicFooter path="/" />
         </>
     );
 }

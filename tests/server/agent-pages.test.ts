@@ -274,8 +274,10 @@ describe("HTML pages", () => {
         const res = await get("/");
         const html = await res.text();
         expect(html).toContain('<html lang="en"');
-        expect(html).toContain(
-            `<a href="${SITE_URL}/actuators/dynamixel-xl330-m288-t">Dynamixel XL330-M288-T specs</a>`,
+        const foldedFooter =
+            /<details class="site-footer-more">[\s\S]*?<\/details>/.exec(html)?.[0];
+        expect(foldedFooter).toContain(
+            '<a href="/actuators/dynamixel-xl330-m288-t">Dynamixel XL330-M288-T specs</a>',
         );
         expect(html).toContain(`<link rel="canonical" href="${SITE_URL}/">`);
         expect(html).toContain(

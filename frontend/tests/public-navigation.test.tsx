@@ -95,7 +95,7 @@ test("each public SPA surface has exactly one shared grouped footer", () => {
 });
 
 test("footer shows at most 12 links; the rest, agent links included, sit in an All pages fold", () => {
-    const view = render(<Home />);
+    const view = render(<App />);
     const footer = view.container.querySelector("footer.site-footer")!;
     const visible = footer.querySelectorAll("nav > section a");
     expect(visible.length).toBe(FOOTER_GROUPS.flatMap((g) => g.links).length);
@@ -103,6 +103,9 @@ test("footer shows at most 12 links; the rest, agent links included, sit in an A
     const fold = footer.querySelector<HTMLDetailsElement>("details.site-footer-more")!;
     expect(fold.open).toBe(false);
     expect(fold.querySelector("summary")?.textContent).toBe("All pages");
+    const featured = 'a[href="/actuators/dynamixel-xl330-m288-t"]';
+    expect(fold.querySelectorAll(featured)).toHaveLength(1);
+    expect(view.container.querySelectorAll(featured)).toHaveLength(1);
     for (const href of ["/llms.txt", "/mcp", "/docs/api", "/agents.md", "/agents"]) {
         expect(footer.querySelector(`a[href="${href}"]`)).not.toBeNull();
     }
