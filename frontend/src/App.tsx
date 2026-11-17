@@ -112,7 +112,7 @@ export default function App({ menuOpen = false }: { menuOpen?: boolean }) {
 
             <DetailPanel actuator={selected} onClose={() => setSelected(null)} />
         </div>
-        <PublicFooter />
+        <PublicFooter path="/" />
         </>
     );
 }

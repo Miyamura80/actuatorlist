@@ -226,6 +226,6 @@ export function pageBody(
     return [
         publicHeader(path),
         `<main class="ga-main">${content}</main>`,
-        footer ? publicFooter() : "",
+        footer ? publicFooter(path) : "",
     ].join("\n");
 }
