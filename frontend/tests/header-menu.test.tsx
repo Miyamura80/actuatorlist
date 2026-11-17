@@ -62,3 +62,14 @@ test("server-rendered header carries the same menu and search icon", () => {
     expect(html).toContain(`class="site-search" aria-label="${SEARCH_LINK.label}"`);
     for (const href of [...MARKET, ...SUPPLY]) expect(html).toContain(`href="${href}"`);
 });
+
+test("modified clicks on the search icon keep normal link behaviour", async () => {
+    const view = render(<><PublicHeader path="/" /><CommandPalette /></>);
+    const search = view.container.querySelector<HTMLAnchorElement>("header a.site-search")!;
+    for (const init of [{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }, { button: 1 }]) {
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true, ...init });
+        await act(async () => { search.dispatchEvent(click); });
+        expect(click.defaultPrevented).toBe(false);
+        expect(document.querySelector('[role="dialog"]')).toBeNull();
+    }
+});

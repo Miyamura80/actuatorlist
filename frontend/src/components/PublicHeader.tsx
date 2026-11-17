@@ -27,7 +27,11 @@ export function PublicHeader({ path, initialOpen = false, supplyChainPreview = f
         </a>
         <a href={CODE_LICENSE.href} className="open-source-link"><GitHubMark /><GitHubStar />{CODE_LICENSE.label}</a>
         <a href={SEARCH_LINK.href} className="site-search" aria-label={SEARCH_LINK.label} title={SEARCH_LINK.title}
-            onClick={(event) => { if (openCommandPalette()) event.preventDefault(); }}>
+            onClick={(event) => {
+                // Modified or middle clicks keep normal link behaviour (new tab, new window).
+                if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (openCommandPalette()) event.preventDefault();
+            }}>
             <HeaderIcon item="search" />
         </a>
         <details className="site-menu" open={initialOpen} ref={ref} onKeyDown={(event) => {
