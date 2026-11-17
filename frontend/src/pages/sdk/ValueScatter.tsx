@@ -53,6 +53,6 @@ export function SdkValueScatter({ rows, focus }: { rows: BrandSummary[]; focus: 
                     textAnchor={sx(p.x) > W - 140 ? "end" : "start"} dominantBaseline="middle">{p.name}</text> : null}
             </g>)}
         </svg>
-        <figcaption>Up and left is better. The line joins and names the brands no other brand beats on both price and SDK score; hover a dot for the rest.</figcaption>
+        <figcaption><span aria-hidden="true">↖</span> better · dashed line: nobody beats them on both price and score</figcaption>
     </figure>;
 }

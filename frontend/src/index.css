@@ -2150,40 +2150,6 @@ table.board {
 }
 
 /* ---- Command palette (Cmd/Ctrl+K) ------------------------------------- */
-.cmdk-trigger {
-    position: fixed;
-    right: 18px;
-    bottom: 18px;
-    z-index: 16;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 13px;
-    border: 1px solid var(--line-strong);
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--panel) 90%, transparent);
-    backdrop-filter: blur(6px);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 13px;
-    cursor: pointer;
-    transition: border-color 0.15s ease;
-}
-.cmdk-trigger:hover {
-    border-color: var(--cyan);
-}
-.cmdk-trigger-icon {
-    font-size: 15px;
-    color: var(--cyan);
-}
-.cmdk-trigger-kbd {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    border: 1px solid var(--line-strong);
-    border-radius: 4px;
-    padding: 1px 5px;
-}
 .cmdk-scrim {
     position: fixed;
     inset: 0;
@@ -2343,34 +2309,6 @@ table.board {
     padding: 1px 5px;
     color: var(--text);
 }
-@media (max-width: 560px) {
-    /* Touch screens have no Cmd+K, so the trigger shrinks to a round icon
-       button that clears the iOS home indicator. */
-    .cmdk-trigger-text,
-    .cmdk-trigger-kbd {
-        display: none;
-    }
-    .cmdk-trigger {
-        right: calc(12px + env(safe-area-inset-right, 0px));
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-        width: 44px;
-        height: 44px;
-        padding: 0;
-        justify-content: center;
-    }
-    .cmdk-trigger-icon {
-        font-size: 20px;
-        line-height: 1;
-    }
-    /* Reserve room after the last content (footer links, table rows) so
-       scrolling to the end always leaves it clear of the floating trigger. */
-    body:has(.cmdk-trigger)::after {
-        content: "";
-        display: block;
-        height: calc(64px + env(safe-area-inset-bottom, 0px));
-    }
-}
-
 /* ---- /agents: MCP connect page ----------------------------------------- */
 .agents-grid {
     max-width: 1120px;

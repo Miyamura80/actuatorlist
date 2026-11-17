@@ -88,8 +88,6 @@ for (const t of TARGETS) {
     // Two settled frames after the context comes up.
     await page.waitForTimeout(1500);
     await page.mouse.move(0, 0);
-    // Floating site chrome (the search button) must not land in the poster.
-    await page.addStyleTag({ content: ".cmdk-trigger { display: none !important; }" });
     await page.locator('figure.x3[data-ready="true"] .x3-stage').first().screenshot({ path: `${out}/${t.id}.png` });
     console.log(`Captured ${t.id}`);
 }

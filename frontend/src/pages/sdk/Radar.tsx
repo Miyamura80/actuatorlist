@@ -48,7 +48,6 @@ export function SdkRadar({ brands, colorOf, remove, clear }: {
                 </li>)}
             </ul>
             <button type="button" onClick={clear} disabled={!brands.length}>Clear</button>
-            <p className="sdk-muted">A dimension with no data plots at {MISSING_SCORE}, as in the overall.</p>
         </section>
     </div>;
 }

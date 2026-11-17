@@ -112,10 +112,11 @@ export function CountryMap({ code, label, values, format, valueLabel, sites, cit
     const [active, setActive] = useState<string | null>(null);
     const step = useMemo(() => (shade ? choroplethScale(shade) : undefined), [shade]);
     const name = countryName(code);
+    const selectedRegion = regions?.selected;
     const regionBox = useMemo((): Box | null => {
-        const f = regions?.selected ? features.find((x) => codeOf(x) === regions.selected) : undefined;
+        const f = selectedRegion ? features.find((x) => codeOf(x) === selectedRegion) : undefined;
         return f && view ? geoPath(view.projection).bounds(f) as Box : null;
-    }, [regions?.selected, features, view]);
+    }, [selectedRegion, features, view]);
     const title = label ?? `${name} by region`;
     if (!view) return <figure className="mk-map mk-country is-loading" aria-label={title}><div className="mk-stage" style={{ aspectRatio: "4 / 3" }} /></figure>;
     const regionName = (id: string) => nameOf(features.find((f) => codeOf(f) === id) ?? ({ properties: { code: id } } as GeoFeature));

@@ -1,5 +1,5 @@
 import { ACTUATORS, ROBOTS } from "../catalog";
-import { FOOTER_GROUPS } from "../public-navigation";
+import { FOOTER_LINKS } from "../public-navigation";
 import { type Citation, licenceErrors } from "../supply-chain/licence";
 import { TREND_CHARTS } from "./index";
 import { SOURCES, TRENDS_FACTS_ALLOWLIST, isOwnSource } from "./sources";
@@ -19,9 +19,7 @@ export function trendsCitations(): Citation[] {
     );
 }
 
-const PAGE_PATHS = new Set<string>(
-    FOOTER_GROUPS.flatMap((g) => g.links.map(([href]) => href)),
-);
+const PAGE_PATHS = new Set<string>(FOOTER_LINKS.map(([href]) => href));
 
 // An own-data id names something that exists: a catalog actuator, a robot on
 // /robots or a page in the site navigation.

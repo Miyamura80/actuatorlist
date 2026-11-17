@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 import type { HeaderMenu as Menu } from "../../../../src/public-navigation";
 import { HeaderIcon } from "./HeaderIcon";
 
-// One dropdown in the public header ("Market intel", "Supply chain"). Links
-// that are not live yet (supply-chain preview only) render inert.
+// The public header's "Explore" dropdown: one section per group (market
+// intel, supply chain) under a small icon heading. Links that are not live
+// yet (supply-chain preview only) render inert.
 export function HeaderMenu({ menu, path, onNavigate }: {
     menu: Menu;
     path: string;
@@ -34,12 +35,12 @@ export function HeaderMenu({ menu, path, onNavigate }: {
     }}>
         <summary className={current ? "is-current" : undefined}><HeaderIcon item={menu.id} />{menu.label}</summary>
         <div className="site-sub-panel">
-            {menu.groups.map((g) => <section key={g.label}>
-                <h3>{g.label}</h3>
-                {g.links.map((l) => l.live
+            {menu.groups.map((g) => <section key={g.label} data-group={g.icon}>
+                <h3>{g.icon && <HeaderIcon item={g.icon} />}{g.label}</h3>
+                <div className="site-sub-links">{g.links.map((l) => l.live
                     ? <a key={l.href} href={l.href} aria-current={path === l.href ? "page" : undefined}
                         onClick={() => { if (ref.current) ref.current.open = false; onNavigate?.(); }}>{l.label}</a>
-                    : <span key={l.href} className="site-sub-soon" aria-disabled="true">{l.label}<small>soon</small></span>)}
+                    : <span key={l.href} className="site-sub-soon" aria-disabled="true">{l.label}<small>soon</small></span>)}</div>
             </section>)}
         </div>
     </details>;

@@ -134,7 +134,7 @@ export function MapFrame({ view, label, base, children, toggle, readout, legend,
     const [slot, setSlot] = useState<Rect | null>(null);
     useEffect(() => {
         const el = slotRef.current;
-        if (!el || typeof getComputedStyle === "undefined") { setSlot(null); return; }
+        if (!el || typeof getComputedStyle === "undefined") return;
         const measure = () => setSlot(getComputedStyle(el).position === "absolute" ? [0, 0, el.offsetLeft + el.offsetWidth + 4, el.offsetTop + el.offsetHeight + 4] : null);
         measure();
         if (typeof ResizeObserver === "undefined") return;
@@ -149,7 +149,7 @@ export function MapFrame({ view, label, base, children, toggle, readout, legend,
         ro.observe(el);
         return () => ro.disconnect();
     }, []);
-    const reserved = useMemo(() => [...hudRects(stageWidth, stageWidth * (height / width), scaleBar), ...(slot ? [slot] : [])], [stageWidth, width, height, scaleBar, slot]);
+    const reserved = useMemo(() => [...hudRects(stageWidth, stageWidth * (height / width), scaleBar), ...(slot && toggle ? [slot] : [])], [stageWidth, width, height, scaleBar, slot, toggle]);
     const ctx = useMemo<MapContextValue>(() => ({
         width,
         height,

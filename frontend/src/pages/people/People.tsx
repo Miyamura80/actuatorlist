@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PublicFooter } from "../../components/PublicFooter";
 import { PublicHeader } from "../../components/PublicHeader";
 import { PersonCard } from "../../components/people/PersonCard";
+import { Fold } from "../../components/ui/Fold";
 import { WorldMap } from "../../components/maps/WorldMap";
 import { countryName } from "../../../../src/country-flag";
 import {
@@ -60,32 +61,36 @@ function PersonChip({ p, onOpen }: { p: DirectoryPerson; onOpen: (id: string) =>
     </a>;
 }
 
+// The card leads with who and why; works, links and sources stay folded.
 function PersonDetail({ person, onOrg }: { person: DirectoryPerson; onOrg: (id: string) => void }) {
     const links = crossLinks(person);
     const others = (person.alsoOrgIds ?? []).map((id) => ORGS[id]);
     return <PersonCard person={person}>
-        <p className="pp-role">{person.role}</p>
-        <p className="pp-domain"><i className={`pp-dot pp-${person.domain}`} aria-hidden="true" />{DOMAIN_LABEL[person.domain]}</p>
+        <p className="pp-role"><i className={`pp-dot pp-${person.domain}`} title={DOMAIN_LABEL[person.domain]} aria-hidden="true" />{person.role}</p>
         <p className="pp-why">{person.whyTheyMatter}</p>
-        <h4>Key works</h4>
-        <ul className="pp-works">
-            {person.keyWorks.map((w) => <li key={w.url + w.title}>
-                <a href={w.url} target="_blank" rel="noopener">{w.title}</a>
-                <span>{w.year ? `${w.year} · ` : ""}{w.kind}</span>
-            </li>)}
-        </ul>
-        {others.length ? <p className="pp-also">Also: {others.map((o, i) => <span key={o.id}>{i > 0 ? ", " : ""}<a href={`?org=${o.id}`} onClick={(e) => { e.preventDefault(); onOrg(o.id); }}>{o.name}</a></span>)}</p> : null}
-        {links.length ? <p className="pp-site">On this site: {links.map((l, i) => <span key={l.href}>{i > 0 ? ", " : ""}<a href={l.href}>{l.label}</a></span>)}</p> : null}
-        <details className="pp-more">
-            <summary>Sources</summary>
-            <ol>
-                {person.sources.map((id) => {
-                    const s = getSource(id);
-                    return <li key={id}><a href={s?.url} target="_blank" rel="noopener">{s?.title ?? id}</a> <span>{s?.publisher}</span></li>;
-                })}
-            </ol>
-            <p className="pp-cite">Listed because: {CRITERIA[person.criterion]}</p>
-        </details>
+        {others.length ? <div className="pp-chips">{others.map((o) => <a key={o.id} className="pp-chip" href={`?org=${o.id}`} onClick={(e) => { e.preventDefault(); onOrg(o.id); }}>{o.name}</a>)}</div> : null}
+        <div className="pp-folds">
+            <Fold title="Key works" count={person.keyWorks.length}>
+                <ul className="pp-works">
+                    {person.keyWorks.map((w) => <li key={w.url + w.title}>
+                        <a href={w.url} target="_blank" rel="noopener">{w.title}</a>
+                        <span>{w.year ? `${w.year} · ` : ""}{w.kind}</span>
+                    </li>)}
+                </ul>
+            </Fold>
+            {links.length ? <Fold title="On this site" count={links.length}>
+                <ul className="pp-works">{links.map((l) => <li key={l.href}><a href={l.href}>{l.label}</a></li>)}</ul>
+            </Fold> : null}
+            <Fold title="Sources" count={person.sources.length} className="pp-more">
+                <ol>
+                    {person.sources.map((id) => {
+                        const s = getSource(id);
+                        return <li key={id}><a href={s?.url} target="_blank" rel="noopener">{s?.title ?? id}</a> <span>{s?.publisher}</span></li>;
+                    })}
+                </ol>
+                <p className="pp-cite">Listed because: {CRITERIA[person.criterion]}</p>
+            </Fold>
+        </div>
     </PersonCard>;
 }
 
@@ -182,7 +187,7 @@ export function People({ menuOpen = false }: { menuOpen?: boolean }) {
             <header className="tool-head">
                 <p className="tool-kicker">People</p>
                 <h1>Who shapes actuators and the magnet supply chain</h1>
-                <p className="pp-lede">{DIRECTORY.length} researchers, founders, magnet and rare earth executives, analysts and policy leads. Select anyone to see why they matter. Roles checked {PEOPLE_AS_OF}.</p>
+                <p className="pp-lede">{DIRECTORY.length} people · roles checked {PEOPLE_AS_OF}</p>
             </header>
 
             <div className="pp-filter" role="group" aria-label="Domain">
