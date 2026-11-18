@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
-import type { Actuator } from "../types";
-import { CATEGORY_MAP } from "../types";
-import { activation } from "../lib/svg-link";
-import { Legend } from "./Legend";
+import type { Actuator } from "../../types";
+import { CATEGORY_MAP } from "../../types";
+import { activation } from "../../lib/svg-link";
+import { Legend } from "../Legend";
 import {
     type TradeoffRow,
     tradeoffApplications,
     tradeoffRows,
-} from "../../../src/catalog/tradeoff";
+} from "../../../../src/catalog/tradeoff";
 
 interface Props {
     actuators: Actuator[];

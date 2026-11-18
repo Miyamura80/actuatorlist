@@ -10,7 +10,7 @@ import { HighlightCards } from "./components/HighlightCards";
 import { BarChart } from "./components/BarChart";
 import type { BarItem } from "./components/BarChart";
 import { Scatter } from "./components/Scatter";
-import { TradeoffChart } from "./components/TradeoffChart";
+import { TradeoffChart } from "./components/leaderboard/TradeoffChart";
 import { Legend } from "./components/Legend";
 import { colorForBrand, legendFor } from "./lib/brands";
 import { DetailPanel } from "./components/DetailPanel";
