@@ -118,10 +118,11 @@ export default function App({ menuOpen = false }: { menuOpen?: boolean }) {
                     </h2>
                     <p className="block-sub">
                         No actuator wins both. A low reduction ratio keeps the joint
-                        backdrivable and lets the motor feel contact; a high one buys
-                        stiffness and repeatable positioning. Priced actuators with a
-                        published ratio, colored by type. The cheapest in each band is
-                        labelled, with backlash in arcmin where published.
+                        backdrivable and lets the motor feel contact; a high one makes it
+                        stiff and holds position, though how little play it has depends
+                        on the gearbox type. Priced actuators with a published ratio,
+                        colored by type. The cheapest in each band is labelled, with
+                        backlash in arcmin where published.
                     </p>
                     <TradeoffChart actuators={ACTUATORS} onSelect={openById} />
                 </section>

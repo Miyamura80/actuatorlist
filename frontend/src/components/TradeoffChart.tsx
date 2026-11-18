@@ -22,12 +22,13 @@ const PRICE_TICKS = [25, 50, 100, 200, 500, 1000, 2000, 5000];
 const RATIO_TICKS = [1, 3, 10, 30, 100, 300];
 
 // Reduction bands. Below ~10:1 the motor still feels the load (QDD, direct
-// drive); from ~50:1 the joint is stiff and precise but no longer
-// backdrivable in practice.
+// drive); from ~50:1 the joint is stiff and no longer backdrivable in
+// practice. How precise it is depends on the gearbox type (harmonic vs servo
+// spur gears), not the ratio, so the top band does not claim low backlash.
 const BANDS = [
     { key: "compliant", lo: 0, hi: 12, label: "Compliant: backdrivable, force-transparent" },
     { key: "middle", lo: 12, hi: 50, label: "Middle: some feel, some stiffness" },
-    { key: "precise", lo: 50, hi: Infinity, label: "Precise: stiff, low backlash, not backdrivable" },
+    { key: "precise", lo: 50, hi: Infinity, label: "Stiff: holds position, not backdrivable" },
 ] as const;
 
 const categoryColor = (c: Actuator["category"]) => `hsl(${CATEGORY_MAP[c]?.hue ?? 210} 70% 60%)`;
@@ -174,7 +175,7 @@ export function TradeoffChart({ actuators, onSelect }: Props) {
                         Price (USD, log scale) {"→"} cheaper is left
                     </text>
                     <text x={16} y={M.top - 10} className="axis-label">
-                        Reduction ratio (log) {"↑"} stiffer and more precise
+                        Reduction ratio (log) {"↑"} stiffer, harder to push
                     </text>
                 </svg>
             </div>
