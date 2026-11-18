@@ -6,7 +6,7 @@ import { Contributors } from "../src/pages/Contributors";
 import { PersonCard } from "../src/components/people/PersonCard";
 import { OrgLogo } from "../src/components/people/OrgLogo";
 import { CONTRIBUTORS, ORGS, PEOPLE } from "../../src/people";
-import { FOOTER_GROUPS } from "../../src/public-navigation";
+import { FOOTER_LINKS } from "../../src/public-navigation";
 
 afterEach(cleanup);
 
@@ -39,7 +39,7 @@ test("one CTA, a /contact route for changes, and the shared footer", () => {
     const view = render(<Contributors />);
     expect(view.container.querySelectorAll(".req-cta")).toHaveLength(1);
     expect(view.container.querySelector('main a[href="/contact"]')).not.toBeNull();
-    for (const group of FOOTER_GROUPS) for (const [href, label] of group.links) {
+    for (const [href, label] of FOOTER_LINKS) {
         expect(view.container.querySelector(`footer a[href="${href}"]`)?.textContent).toBe(label);
     }
 });
@@ -51,7 +51,7 @@ test("a person without a headshot gets a monogram, never a borrowed photo", () =
         if (person.headshot) expect(img?.getAttribute("src")).toBe(person.headshot.path);
         else {
             expect(img).toBeNull();
-            expect(view.container.querySelector(".pc-monogram")?.textContent).toMatch(/^[A-Z]{1,2}$/);
+            expect(view.container.querySelector(".pc-monogram")?.textContent).toMatch(/^\p{Lu}{1,2}$/u);
         }
         cleanup();
     }

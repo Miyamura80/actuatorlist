@@ -10,7 +10,7 @@ import { Home } from "../src/pages/Home";
 import { ActuatorsPage } from "../src/pages/actuators/ActuatorsPage";
 import { Agents } from "../src/pages/Agents";
 import { ExplodedView } from "../src/pages/ExplodedView";
-import { FOOTER_GROUPS } from "../../src/public-navigation";
+import { FOOTER_GROUPS, FOOTER_LINKS } from "../../src/public-navigation";
 import { REPO_URL } from "../../src/repo-link";
 
 afterEach(cleanup);
@@ -68,8 +68,12 @@ test("public SPA headers share native mobile disclosure and active route links",
         expect(menu.querySelector("summary")?.textContent).toBe("");
         expect(menu.querySelector("summary")?.getAttribute("aria-label")).toBe("Menu");
         expect(Boolean(menu.querySelector('summary svg[aria-hidden="true"] path'))).toBe(true);
-        expect(header.querySelector(`a[href="${path}"][aria-current="page"]`)).not.toBeNull();
-        expect(header.querySelector(".alpha-tag")?.textContent).toBe("alpha");
+        // /agents left the header; the pages still linked there mark themselves current.
+        if (path !== "/agents") expect(header.querySelector(`a[href="${path}"][aria-current="page"]`)).not.toBeNull();
+        expect(header.querySelector(".site-stage")?.textContent).toBe("beta");
+        for (const item of header.querySelectorAll("nav > a, nav > .site-sub > summary")) {
+            expect(Boolean(item.querySelector('svg.site-nav-icon[aria-hidden="true"] path'))).toBe(true);
+        }
         for (const link of header.querySelectorAll("nav a")) {
             const event = new MouseEvent("click", { bubbles: true, cancelable: true });
             link.dispatchEvent(event);
@@ -83,11 +87,32 @@ test("each public SPA surface has exactly one shared grouped footer", () => {
     for (const page of [<App />, <Home />, <ActuatorsPage />, <Agents />]) {
         const view = render(page);
         expect(view.container.querySelectorAll("footer.site-footer")).toHaveLength(1);
-        for (const group of FOOTER_GROUPS) for (const [href, label] of group.links) {
+        for (const [href, label] of FOOTER_LINKS) {
             expect(view.container.querySelector(`footer a[href="${href}"]`)?.textContent).toBe(label);
         }
         cleanup();
     }
+});
+
+test("footer shows at most 12 links; the rest, agent links included, sit in an All pages fold", () => {
+    const view = render(<App />);
+    const footer = view.container.querySelector("footer.site-footer")!;
+    const visible = footer.querySelectorAll("nav > section a");
+    expect(visible.length).toBe(FOOTER_GROUPS.flatMap((g) => g.links).length);
+    expect(visible.length).toBeLessThanOrEqual(12);
+    const fold = footer.querySelector<HTMLDetailsElement>("details.site-footer-more")!;
+    expect(fold.open).toBe(false);
+    expect(fold.querySelector("summary")?.textContent).toBe("All pages");
+    const featured = 'a[href="/actuators/dynamixel-xl330-m288-t"]';
+    expect(fold.querySelectorAll(featured)).toHaveLength(1);
+    expect(view.container.querySelectorAll(featured)).toHaveLength(1);
+    for (const href of ["/llms.txt", "/mcp", "/docs/api", "/agents.md", "/agents"]) {
+        expect(footer.querySelector(`a[href="${href}"]`)).not.toBeNull();
+    }
+    // No page is linked twice.
+    const hrefs = [...footer.querySelectorAll("a")].map((a) => a.getAttribute("href"));
+    expect(new Set(hrefs).size).toBe(hrefs.length);
+    cleanup();
 });
 
 test("footer GitHub link leads with one decorative GitHub mark", () => {
@@ -101,8 +126,9 @@ test("footer GitHub link leads with one decorative GitHub mark", () => {
     cleanup();
 });
 
-test("the full dataset table keeps its datasheet warning", () => {
+test("the full dataset page ends at the site footer, with no disclaimer strip", () => {
     const view = render(<ActuatorsPage />);
-    expect(view.container.textContent).toContain("verify against datasheets before engineering use.");
+    expect(view.container.querySelector("p.foot")).toBeNull();
+    expect(view.container.textContent).not.toContain("Community dataset");
     cleanup();
 });

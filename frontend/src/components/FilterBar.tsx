@@ -19,6 +19,8 @@ interface Props {
     onChange: (next: FilterState) => void;
     // Extra controls at the end of the search row (e.g. a view switch).
     children?: ReactNode;
+    // Extra controls inside the filter panel, above the filters (e.g. grouping).
+    panelExtra?: ReactNode;
 }
 
 function toggle<T>(set: Set<T>, v: T): Set<T> {
@@ -56,6 +58,7 @@ export function FilterBar({
     shown,
     onChange,
     children,
+    panelExtra,
 }: Props) {
     const [open, setOpen] = useState(false);
     const wrapRef = useRef<HTMLDivElement>(null);
@@ -160,6 +163,7 @@ export function FilterBar({
 
             {open && (
                 <div className="filter-panel" id={panelId} role="dialog" aria-label="Filters">
+                    {panelExtra}
                     <fieldset>
                         <legend>Category</legend>
                         <div className="chips" role="group" aria-label="Category filter">

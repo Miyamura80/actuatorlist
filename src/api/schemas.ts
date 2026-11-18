@@ -1,3 +1,5 @@
+import { ROBOT_KINDS } from "@/catalog";
+import { sdkLookupOut } from "@/sdk/views";
 import { z } from "zod";
 
 // Response contracts for /api/v1. These zod schemas are the single source of
@@ -69,6 +71,9 @@ export const ActuatorSchema = named(
             source_domain: str("Domain of source_url."),
             url: z.string().describe("Human-readable page on actuatorlist.com."),
             api_url: z.string().describe("Canonical API URL of this resource."),
+            price_history_url: z
+                .string()
+                .describe("API URL of this actuator's dated price history."),
         })
         .describe("A robot actuator with its published specifications."),
 );
@@ -90,6 +95,7 @@ export const ActuatorDetailSchema = named(
         robots_using: z
             .array(RobotRefSchema)
             .describe("Robots in the catalog whose joints use this actuator."),
+        sdk: sdkLookupOut,
     }),
 );
 
@@ -98,20 +104,23 @@ export const JointSchema = named(
     z.object({
         role: z.string().describe("Joint group, e.g. `Shoulder (J1-J3)`."),
         count: z.number().describe("Number of joints in this group."),
-        motor: z.object({
-            id: z.string(),
-            name: z.string(),
-            brand: z.string(),
-            rated_torque_nm: num("Rated torque in N·m."),
-            peak_torque_nm: num("Peak torque in N·m."),
-            rated_speed_rpm: num("Rated speed in rpm."),
-            gear_ratio: str("Gear ratio."),
-            weight_g: num("Mass in grams."),
-            torque_density_nm_per_kg: num("Torque density."),
-            product_url: str("Product page."),
-            actuator_id: str("Catalog actuator id, when the motor is listed."),
-            actuator_api_url: str("API URL of the linked actuator, if any."),
-        }),
+        motor: z
+            .object({
+                id: z.string(),
+                name: z.string(),
+                brand: z.string(),
+                rated_torque_nm: num("Rated torque in N·m."),
+                peak_torque_nm: num("Peak torque in N·m."),
+                rated_speed_rpm: num("Rated speed in rpm."),
+                gear_ratio: str("Gear ratio."),
+                weight_g: num("Mass in grams."),
+                torque_density_nm_per_kg: num("Torque density."),
+                product_url: str("Product page."),
+                actuator_id: str("Catalog actuator id, when the motor is listed."),
+                actuator_api_url: str("API URL of the linked actuator, if any."),
+            })
+            .nullable()
+            .describe("Null when no cited source names the joint motor."),
     }),
 );
 
@@ -119,7 +128,7 @@ const robotFields = {
     id: z.string(),
     name: z.string(),
     brand: z.string(),
-    kind: z.enum(["robot_arm", "humanoid"]).describe("Robot type."),
+    kind: z.enum(ROBOT_KINDS).describe("Robot type: humanoid, robot_arm or quadruped."),
     country: str("Manufacturer country."),
     country_flag: str("Flag emoji."),
     dof: z
@@ -131,12 +140,14 @@ const robotFields = {
     payload_kg: num("Payload in kg."),
     reach_mm: num("Reach in mm."),
     height_m: num("Standing height in m (humanoids)."),
+    top_speed_mps: num("Top speed in m/s, the maker's best figure (quadrupeds)."),
     weight_kg: num("Mass in kg."),
     price_usd: num("Price (or lower bound) in USD."),
     price_max_usd: num("Upper price bound in USD, if a range."),
     product_url: str("Product page."),
     image_url: str("Image URL."),
     summary: z.string(),
+    notes: str("Which figures are missing or edition-specific, and why."),
     sources: z.array(z.string()),
     url: z.string(),
     api_url: z.string(),

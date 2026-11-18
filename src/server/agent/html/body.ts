@@ -135,6 +135,64 @@ export function foldLimits(html: string): string {
     );
 }
 
+function slug(text: string): string {
+    return text
+        .replace(/<[^>]+>/g, "")
+        .toLowerCase()
+        .replace(/&[a-z]+;/g, "-")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+}
+
+export const FOLD_CHEVRON =
+    '<svg class="ga-fold-chev" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M4 2l4 4-4 4"/></svg>';
+
+export interface FoldOptions {
+    // The <details> id for a section, from its h2 id (or a slug of its text).
+    foldId?: (key: string) => string;
+    // A short value shown at the end of the summary row (e.g. "48.0 N·m").
+    meta?: (key: string) => string | undefined;
+}
+
+// Each h2 and everything up to the next h2 becomes one closed <details>: the
+// h2 (with its id and icon) is the summary, so anchors still resolve and a
+// hash link opens the fold (see FOLD_SCRIPT). Text before the first h2 stays
+// open. Folds made by foldQuestions and friends nest inside.
+export function foldSections(html: string, opts: FoldOptions = {}): string {
+    const first = html.search(/<h2[ >]/);
+    if (first < 0) return html;
+    const head = html.slice(0, first);
+    const sections = html.slice(first).split(/(?=<h2[ >])/);
+    return (
+        head +
+        sections
+            .map((section) => {
+                const m = /^(<h2([^>]*)>[\s\S]*?<\/h2>)([\s\S]*)$/.exec(section);
+                if (!m) return section;
+                const [, heading = "", attrs = "", rest = ""] = m;
+                const key = /\bid="([^"]+)"/.exec(attrs)?.[1] ?? slug(heading);
+                const id = opts.foldId ? opts.foldId(key) : `fold-${key}`;
+                const meta = opts.meta?.(key);
+                const metaHtml = meta
+                    ? `<span class="ga-fold-meta">${meta}</span>`
+                    : "";
+                const body = rest.trimEnd();
+                return `<details class="ga-fold" id="${id}"><summary>${FOLD_CHEVRON}${heading}${metaHtml}</summary><div class="ga-fold-body">${body}</div></details>\n`;
+            })
+            .join("")
+    );
+}
+
+// The whole block behind one summary line, e.g. a country's data tables.
+export function foldOuter(html: string, label: string, id: string): string {
+    return `<details class="ga-fold ga-fold-outer" id="${id}"><summary>${FOLD_CHEVRON}<span class="ga-fold-title">${label}</span></summary><div class="ga-fold-body">${html}</div></details>`;
+}
+
+// Open the folds around a hash target: on load, on hashchange, and on click
+// of an in-page link (before the browser scrolls). A link to the whole
+// section (#catalog-content) opens its first fold. Plain DOM, no globals.
+export const FOLD_SCRIPT = `(function(){function t(h){if(!h||h.length<2)return null;var e;try{e=document.getElementById(decodeURIComponent(h.slice(1)))}catch(_){return null}if(e&&e.id==="catalog-content")e=e.querySelector("details.ga-fold:not(.ga-fold-outer)")||e;return e}function o(e){var n=0;for(var d=e&&e.closest("details");d;d=d.parentElement&&d.parentElement.closest("details")){if(!d.open){d.open=true;n++}}if(e&&e.tagName==="DETAILS"&&!e.open){e.open=true;n++}return n}function g(s){var e=t(location.hash);if(o(e)&&s&&e)e.scrollIntoView()}document.addEventListener("click",function(v){var a=v.target&&v.target.closest&&v.target.closest("a[href^='#']");if(a)o(t(a.getAttribute("href")))},true);addEventListener("hashchange",function(){g(true)});g(true)})();`;
+
 // Page body: nav, the rendered markdown as <main>, footer.
 export function pageBody(
     md: string,
@@ -168,6 +226,6 @@ export function pageBody(
     return [
         publicHeader(path),
         `<main class="ga-main">${content}</main>`,
-        footer ? publicFooter() : "",
+        footer ? publicFooter(path) : "",
     ].join("\n");
 }

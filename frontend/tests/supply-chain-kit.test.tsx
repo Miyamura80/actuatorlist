@@ -70,7 +70,14 @@ test("MarketShareList shows cited shares, dashes and Other", () => {
     const fanuc = rows.find((r) => r.textContent?.includes("FANUC"));
     expect(fanuc?.classList.contains("sc-share-none")).toBe(true);
     expect(fanuc?.querySelector(".sc-share-fill")).toBeNull();
-    expect(rows.at(-1)?.textContent).toContain("Other");
+    // Companies with a share, then Other; the rest wait in a closed fold.
+    const front = [...view.container.querySelectorAll(".sc-share > ul > li")];
+    expect(front.at(-1)?.textContent).toContain("Other");
+    expect(front.some((r) => r.classList.contains("sc-share-none"))).toBe(false);
+    const more = view.container.querySelector("details.sc-share-more");
+    expect(more?.hasAttribute("open")).toBe(false);
+    expect(more?.contains(fanuc ?? null)).toBe(true);
+    expect(more?.querySelector(".fold-title")?.textContent).toMatch(/^\d+ more compan(y|ies), no public share$/);
     expect(view.container.querySelector(".sc-share-cap")?.textContent).toContain("Humanoid robot shipments");
 });
 
@@ -81,17 +88,18 @@ test("legend shows all three confidence styles", () => {
 });
 
 test("supply-chain menu lists live pages only", () => {
-    expect([...SUPPLY_CHAIN_PAGES_LIVE]).toEqual(["/metals", "/policy"]);
+    // Country pages join once their dataset passes the coverage gate.
+    expect([...SUPPLY_CHAIN_PAGES_LIVE]).toEqual(["/metals", "/policy", "/manufacturing", "/alts", "/bom", "/japan", "/china", "/korea", "/us"]);
     const view = render(<PublicHeader path="/" />);
-    expect([...view.container.querySelectorAll(".site-sub-panel a")].map((a) => a.getAttribute("href"))).toEqual(["/metals", "/policy"]);
+    expect([...view.container.querySelectorAll("[data-group=supply-chain] a")].map((a) => a.getAttribute("href"))).toEqual(["/metals", "/policy", "/bom", "/manufacturing", "/alts", "/japan", "/china", "/korea", "/us"]);
     cleanup();
     expect(supplyChainMenu(false, new Set())).toEqual([]);
     expect(supplyChainMenu(false, new Set(["/metals"]))).toEqual([
         { label: "Chain", links: [{ href: "/metals", label: "Metals", live: true }] },
     ]);
     const preview = render(<PublicHeader path="/lab/supply-chain" supplyChainPreview />);
-    expect(preview.container.querySelectorAll(".site-sub-soon")).toHaveLength(7);
-    expect(preview.container.querySelectorAll(".site-sub-panel a")).toHaveLength(2);
+    expect(preview.container.querySelectorAll(".site-sub-soon")).toHaveLength(0);
+    expect(preview.container.querySelectorAll("[data-group=supply-chain] a")).toHaveLength(9);
 });
 
 test("lab page renders every kit component", () => {

@@ -17,6 +17,8 @@ describe("REST /api/v1/companies and /api/v1/sites", () => {
             "harmonic-drive-systems",
             "nabtesco",
             "nidec",
+            "sumitomo-heavy",
+            "tsubakimoto-chain",
         ]);
         const all = CompanyListSchema.parse(
             await (await get("/api/v1/companies?limit=100")).json(),
@@ -47,7 +49,8 @@ describe("REST /api/v1/companies and /api/v1/sites", () => {
         expect(body.company.revenue_usd?.range).toEqual([5.8e9, 6.0e9]);
         expect(body.company.revenue_usd?.sources[0]?.url).toStartWith("https://");
         expect(body.supplies.map((l) => l.to)).toEqual(["jl-mag"]);
-        expect(body.sites).toHaveLength(1);
+        // Headquarters plus the smelting, magnet and recycling units on /china.
+        expect(body.sites).toHaveLength(4);
     });
 
     test("unknown company is a 404 problem", async () => {
@@ -82,11 +85,13 @@ describe("MCP supply-chain tools", () => {
         const out = (
             await callTool("list_companies", { country: "JP", stage: "gearing" })
         ).structuredContent as { total: number; results: { id: string }[] };
-        expect(out.total).toBe(3);
+        expect(out.total).toBe(5);
         expect(out.results.map((c) => c.id)).toEqual([
             "harmonic-drive-systems",
             "nabtesco",
             "nidec",
+            "sumitomo-heavy",
+            "tsubakimoto-chain",
         ]);
     });
 
@@ -97,7 +102,11 @@ describe("MCP supply-chain tools", () => {
         expect(out.company.revenue_usd?.confidence).toBe("reported");
         expect(out.company.revenue_usd?.sources[0]?.publisher).toBe("MP Materials");
         expect(out.sites.map((s) => s.id)).toContain("mp-mountain-pass");
-        expect(out.supplies.map((l) => l.to)).toEqual(["shenghe-resources"]);
+        expect(out.supplies.map((l) => l.to)).toEqual([
+            "shenghe-resources",
+            "general-motors",
+            "maaden",
+        ]);
         // The Shenghe offtake stopped in April 2025: kept, but marked historical.
         expect(out.supplies[0]?.ended).toBe("2025-04");
         expect((await callTool("get_company", { id: "no-such-co" })).isError).toBe(
@@ -111,7 +120,15 @@ describe("MCP supply-chain tools", () => {
             results: { id: string; precision: string }[];
         };
         expect(out.results.map((s) => [s.id, s.precision])).toEqual([
+            ["arafura-nolans", "region"],
+            ["baotou-steel-bayan-obo", "city"],
+            ["halleck-creek", "city"],
+            ["lynas-mt-weld", "region"],
+            ["maoniuping-mine", "city"],
             ["mp-mountain-pass", "site"],
+            ["niocorp-elk-creek", "city"],
+            ["ramaco-brook-mine", "city"],
+            ["round-top", "city"],
         ]);
     });
 });

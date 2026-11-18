@@ -68,3 +68,19 @@ test("WebMCP: joint data site-wide, and a page tool that scrolls to a joint", as
     view.unmount();
     expect(signals.every((s) => s.aborted)).toBe(true);
 });
+
+test("a joint link opens that joint's server-rendered fold", () => {
+    const fold = document.createElement("details");
+    fold.id = "joint-knee";
+    document.body.append(fold);
+    const view = render(<HumanoidGuide />);
+    const link = view.container.querySelector<HTMLAnchorElement>("a.jm-callout.jm-knee");
+    if (!link) throw new Error("callout missing");
+    link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    expect(fold.open).toBe(true);
+    fold.open = false;
+    view.getByRole("link", { name: "Knee" }).click();
+    expect(fold.open).toBe(true);
+    expect(window.location.hash).toBe("#knee");
+    fold.remove();
+});

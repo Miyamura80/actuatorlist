@@ -86,10 +86,12 @@ const EXTENT: { [K in PartKind]: (p: PartPropsByKind[K]) => Extent } = {
     }),
     "wave-generator": (p) => ({ r: p.major, h: p.width / 2 }),
     "circular-spline": (p) => ({ r: p.outer, h: p.width / 2 }),
-    "cycloid-disc": (p) => ({
-        r: p.radius + (p.pins ? 2 * p.pinRadius : 0),
-        h: p.thickness / 2,
-    }),
+    // With the housing: its ring's outer edge (radius + 2.4 pin radii, as in
+    // pinRing) and pins 1.5 times the disc thickness.
+    "cycloid-disc": (p) =>
+        p.pins || p.pinsOnly
+            ? { r: p.radius + 2.4 * p.pinRadius, h: (p.thickness * 1.5) / 2 }
+            : { r: p.radius, h: p.thickness / 2 },
     "ball-screw": (p) => {
         const nut = p.nutLength ? (p.nutOuter ?? p.diameter * 0.95) * 1.45 : 0;
         return { r: Math.max(p.diameter / 2, nut), h: p.length / 2 };
@@ -117,6 +119,24 @@ const EXTENT: { [K in PartKind]: (p: PartPropsByKind[K]) => Extent } = {
         h: p.length / 2,
     }),
     bolt: (p) => ({ r: (p.circle ?? 0) + p.diameter, h: p.length / 2 }),
+    block: (p) => ({ r: Math.hypot(p.width, p.height) / 2, h: p.depth / 2 }),
+    "arc-segment": (p) => ({ r: p.outer, h: p.length / 2 }),
+    "rotor-core": (p) => ({ r: p.outer, h: p.length / 2 }),
+    coil: (p) => ({ r: p.radius + p.wire, h: (p.turns * p.pitch) / 2 + p.wire }),
+    // Ribs stand a tenth of the width proud of the rim.
+    "grinding-wheel": (p) => ({
+        r: p.radius + (p.ribs ? p.width * 0.1 : 0),
+        h: p.width / 2,
+    }),
+    // The shank runs 1.3 lengths, past both ends of the gashed body.
+    hob: (p) => ({ r: p.radius * 1.15, h: (p.length * 1.3) / 2 }),
+    broach: (p) => ({ r: p.radius + p.teeth * p.rise, h: p.length / 2 }),
+    "finishing-stone": (p) => ({
+        r: Math.hypot(p.width, p.height) / 2,
+        h: p.depth / 2,
+    }),
+    // The raised hub is 2.2 thicknesses deep.
+    "grating-disc": (p) => ({ r: p.radius, h: p.thickness * 1.1 }),
 };
 
 export function partExtent(shape: PartShape): Extent {

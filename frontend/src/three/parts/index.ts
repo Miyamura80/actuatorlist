@@ -10,6 +10,9 @@ import {
 } from "./drives";
 import { ballScrewPart, bearingPart, rollerScrewPart } from "./screws";
 import { encoderPart, pcbPart } from "./boards";
+import { arcSegmentPart, blockPart } from "./blocks";
+import { coilPart, rotorCorePart } from "./cores";
+import { broachPart, finishingStonePart, gratingDiscPart, grindingWheelPart, hobPart } from "./tools";
 import type { Piece } from "./geometry";
 
 export type { Piece } from "./geometry";
@@ -55,5 +58,23 @@ export function buildPart(shape: PartShape): Piece[] {
             return housingPart(shape.props);
         case "bolt":
             return boltPart(shape.props);
+        case "block":
+            return blockPart(shape.props);
+        case "arc-segment":
+            return arcSegmentPart(shape.props);
+        case "rotor-core":
+            return rotorCorePart(shape.props);
+        case "coil":
+            return coilPart(shape.props);
+        case "grinding-wheel":
+            return grindingWheelPart(shape.props);
+        case "hob":
+            return hobPart(shape.props);
+        case "broach":
+            return broachPart(shape.props);
+        case "finishing-stone":
+            return finishingStonePart(shape.props);
+        case "grating-disc":
+            return gratingDiscPart(shape.props);
     }
 }

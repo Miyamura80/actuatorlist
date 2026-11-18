@@ -120,6 +120,9 @@ export interface CycloidDiscProps {
     holes?: number;
     // Also draw the fixed ring of lobes + 1 housing pins.
     pins?: boolean;
+    // Draw only that ring of pins, no disc (a fixed housing beside a
+    // separately moving disc).
+    pinsOnly?: boolean;
 }
 
 export interface BallScrewProps {
@@ -195,6 +198,114 @@ export interface BoltProps {
     circle?: number;
 }
 
+// A box centred on the origin: width along X, height along Y, depth along Z.
+// `slices` draws that many cut lines across X (a block sliced into segments).
+export interface BlockProps {
+    width: number;
+    height: number;
+    depth: number;
+    slices?: number;
+}
+
+// An arc magnet segment (a slice of a ring) about Z, centred on +X; with
+// `count`, that many copies spaced evenly around Z (a rotor's magnet ring).
+export interface ArcSegmentProps {
+    outer: number;
+    inner: number;
+    // Angular span of one segment, radians.
+    angle: number;
+    length: number;
+    count?: number;
+}
+
+// A rotor lamination core about Z, one per rotor family on /alts:
+//   salient       switched reluctance (or a wound-field rotor): `poles` teeth
+//   flux-barrier  synchronous reluctance: `layers` air slots per pole
+//   cage          induction: `bars` copper bars through the core, end rings
+//   spoke         ferrite spoke rotor: `poles` radial magnet slots, magnets in
+export const ROTOR_CORE_KINDS = ["salient", "flux-barrier", "cage", "spoke"] as const;
+export type RotorCoreKind = (typeof ROTOR_CORE_KINDS)[number];
+
+export interface RotorCoreProps {
+    kind: RotorCoreKind;
+    outer: number;
+    inner: number;
+    length: number;
+    // Salient teeth or magnetic poles.
+    poles: number;
+    // Flux-barrier layers per pole.
+    layers?: number;
+    // Cage bars.
+    bars?: number;
+}
+
+// A helical coil about Z (a spring, a twisted fibre, a cable wrap) of
+// `turns` turns at `pitch`, centred on the origin, so `turns * pitch` long.
+// With `strands`, that many helices at even phases, as in a multi-start
+// thread: `pitch` stays the gap between neighbouring wires and each helix's
+// lead is `pitch * strands`. `crossed` adds the same set wound the other way
+// (a braided sleeve).
+export interface CoilProps {
+    radius: number;
+    wire: number;
+    pitch: number;
+    turns: number;
+    strands?: number;
+    crossed?: boolean;
+}
+
+// Cutting and finishing tools for the /manufacturing precision chain.
+
+// A grinding wheel about Z. With `ribs`, that many ridges stand on the rim:
+// the form of a multi-rib thread-grinding wheel.
+export interface GrindingWheelProps {
+    radius: number;
+    width: number;
+    bore?: number;
+    ribs?: number;
+}
+
+// A gear hob about Z: a cylinder cut by `gashes` flutes, with cutting
+// teeth wound on it as a single-start helix of pitch `lead`.
+export interface HobProps {
+    radius: number;
+    length: number;
+    gashes: number;
+    lead: number;
+}
+
+// An internal broach about Z: `teeth` rings along the bar, each a little
+// larger than the last (`rise` in radius per tooth), so one pull cuts the
+// whole tooth depth.
+export interface BroachProps {
+    radius: number;
+    length: number;
+    teeth: number;
+    rise: number;
+    // Spline teeth around each ring.
+    splines?: number;
+}
+
+// A superfinishing stone: a bar of `width` (X) by `height` (Y) by `depth`
+// (Z) whose -Y face is hollowed to `radius`, the curve of the raceway it
+// rubs.
+export interface FinishingStoneProps {
+    width: number;
+    height: number;
+    depth: number;
+    radius: number;
+}
+
+// A graduated encoder disc in the XY plane: `lines` radial graduations on
+// the outer track, plus `tracks - 1` inner code tracks.
+export interface GratingDiscProps {
+    radius: number;
+    thickness: number;
+    lines: number;
+    tracks?: number;
+    hub?: number;
+}
+
 export interface PartPropsByKind {
     cylinder: CylinderProps;
     ring: RingProps;
@@ -214,6 +325,15 @@ export interface PartPropsByKind {
     pcb: PcbProps;
     housing: HousingProps;
     bolt: BoltProps;
+    block: BlockProps;
+    "arc-segment": ArcSegmentProps;
+    "rotor-core": RotorCoreProps;
+    coil: CoilProps;
+    "grinding-wheel": GrindingWheelProps;
+    hob: HobProps;
+    broach: BroachProps;
+    "finishing-stone": FinishingStoneProps;
+    "grating-disc": GratingDiscProps;
 }
 
 export type PartKind = keyof PartPropsByKind;
@@ -237,6 +357,15 @@ export const PART_KINDS = [
     "pcb",
     "housing",
     "bolt",
+    "block",
+    "arc-segment",
+    "rotor-core",
+    "coil",
+    "grinding-wheel",
+    "hob",
+    "broach",
+    "finishing-stone",
+    "grating-disc",
 ] as const satisfies readonly PartKind[];
 
 // A part's shape: which procedural component, with which parameters.

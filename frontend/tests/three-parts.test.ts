@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { Box3, InstancedMesh, Mesh, MeshBasicMaterial } from "three";
+import { ALT_SCENES } from "../../src/supply-chain/alts";
 import { DEMO_SCENES, MAGNET_PRESS_LOOP } from "../../src/supply-chain/scenes/demos";
+import { MAGNET_LOOPS, MAGNET_ROTOR } from "../../src/supply-chain/scenes/magnet-loops";
 import { partExtent, pitchRadius } from "../../src/supply-chain/scenes/motion";
 import { PART_KINDS, type PartShape } from "../../src/supply-chain/scenes/spec";
 import { buildPart, planetaryPose } from "../src/three/parts";
@@ -13,6 +15,22 @@ import { cycloidPoints } from "../src/three/parts/drives";
 const shapes: PartShape[] = [
     ...DEMO_SCENES.flatMap((s) => s.parts),
     ...MAGNET_PRESS_LOOP.actors,
+    ...MAGNET_LOOPS.flatMap((l) => l.actors),
+    ...MAGNET_ROTOR.parts,
+    ...ALT_SCENES.flatMap((s) => (s.kind === "loop" ? s.spec.actors : s.spec.parts)),
+    ...(["salient", "flux-barrier", "cage", "spoke"] as const).map(
+        (kind): PartShape => ({ component: "rotor-core", props: { kind, poles: 6, layers: 3, bars: 20, outer: 30, inner: 6, length: 20 } }),
+    ),
+    { component: "coil", props: { radius: 8, wire: 0.5, pitch: 6, turns: 6, strands: 3, crossed: true } },
+    { component: "grinding-wheel", props: { radius: 30, width: 12, ribs: 6 } },
+    { component: "grinding-wheel", props: { radius: 30, width: 12 } },
+    { component: "hob", props: { radius: 10, length: 24, gashes: 10, lead: 3 } },
+    { component: "broach", props: { radius: 4, length: 80, teeth: 10, rise: 0.4, splines: 12 } },
+    { component: "broach", props: { radius: 4, length: 80, teeth: 6, rise: 0.4 } },
+    { component: "finishing-stone", props: { width: 8, height: 14, depth: 10, radius: 20 } },
+    { component: "grating-disc", props: { radius: 20, thickness: 1.5, lines: 90, tracks: 3 } },
+    { component: "block", props: { width: 40, height: 16, depth: 24, slices: 7 } },
+    { component: "arc-segment", props: { outer: 26, inner: 20, angle: 0.55, length: 16 } },
     { component: "spur-gear", props: { teeth: 18, module: 1, width: 5, bore: 3 } },
     { component: "spur-gear", props: { teeth: 48, module: 1, width: 5, internal: true } },
     {

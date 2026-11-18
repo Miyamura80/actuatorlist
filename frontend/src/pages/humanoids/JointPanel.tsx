@@ -11,8 +11,8 @@ import {
     type Sourced,
     sourceOf,
 } from "../../../../src/humanoids";
-import { CompanyLogo } from "../../components/CompanyLogo";
 import { MetricBar } from "../../components/MetricBar";
+import { Fold } from "../../components/ui/Fold";
 
 function Conf({ c }: { c: Confidence | "reported" | "estimated" }) {
     return <span className={`hm-conf is-${c}`}>{c}</span>;
@@ -124,59 +124,61 @@ function JointList({ robot, onSelect }: { robot: Humanoid; onSelect: (j: Canonic
         );
     const magnetMax = Math.max(1e-9, ...rows.map((j) => j.magnetMassG.value / j.count));
     return (
-        <table className="hm-list">
-            <thead>
-                <tr>
-                    <th>Joint</th>
-                    <th>Type</th>
-                    <th className="num">Peak</th>
-                    <th className="num">Magnet g</th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows.map((j, i) => {
-                    const sided = j.canonical.startsWith("l-");
-                    const raw = jointLabel(j.canonical).replace(/^Left /, "");
-                    const name = raw.charAt(0).toUpperCase() + raw.slice(1);
-                    const n = j.count * (sided ? 2 : 1);
-                    const fig = j.peakTorqueNm ?? j.peakForceN;
-                    const est = j.typeConfidence === "estimated";
-                    return (
-                        <tr key={`${j.canonical}-${i}`}>
-                            <td>
-                                <button type="button" onClick={() => onSelect(j.canonical)}>
-                                    {name}
-                                </button>
-                                {n > 1 && <span className="hm-n">x{n}</span>}
-                            </td>
-                            <td>
-                                <i
-                                    className={`hm-sw${est ? " is-est" : ""}`}
-                                    style={{ "--c": ACTUATOR_TYPE_COLOR[j.actuatorType] } as CSSProperties}
-                                />
-                                {ACTUATOR_TYPE_LABEL[j.actuatorType]}
-                            </td>
-                            <td className="num">
-                                <MetricBar
-                                    value={fig?.value ?? null}
-                                    max={fig ? peakMax(fig.unit ?? "") : 1}
-                                    text={fig ? `${fig.value.toLocaleString("en-US")} ${fig.unit}${fig.confidence !== "reported" ? "ᵉ" : ""}` : ""}
-                                    higherIsBetter
-                                />
-                            </td>
-                            <td className="num">
-                                <MetricBar
-                                    value={j.magnetMassG.value / j.count}
-                                    max={magnetMax}
-                                    text={String(Math.round(j.magnetMassG.value / j.count))}
-                                    higherIsBetter
-                                />
-                            </td>
-                        </tr>
-                    );
-                })}
-            </tbody>
-        </table>
+        <div className="hm-list-scroll" role="region" aria-label={`${robot.name} joints`} tabIndex={0}>
+            <table className="hm-list">
+                <thead>
+                    <tr>
+                        <th>Joint</th>
+                        <th>Type</th>
+                        <th className="num">Peak</th>
+                        <th className="num">Magnet g</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((j, i) => {
+                        const sided = j.canonical.startsWith("l-");
+                        const raw = jointLabel(j.canonical).replace(/^Left /, "");
+                        const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+                        const n = j.count * (sided ? 2 : 1);
+                        const fig = j.peakTorqueNm ?? j.peakForceN;
+                        const est = j.typeConfidence === "estimated";
+                        return (
+                            <tr key={`${j.canonical}-${i}`}>
+                                <td>
+                                    <button type="button" onClick={() => onSelect(j.canonical)}>
+                                        {name}
+                                    </button>
+                                    {n > 1 && <span className="hm-n">x{n}</span>}
+                                </td>
+                                <td>
+                                    <i
+                                        className={`hm-sw${est ? " is-est" : ""}`}
+                                        style={{ "--c": ACTUATOR_TYPE_COLOR[j.actuatorType] } as CSSProperties}
+                                    />
+                                    {ACTUATOR_TYPE_LABEL[j.actuatorType]}
+                                </td>
+                                <td className="num">
+                                    <MetricBar
+                                        value={fig?.value ?? null}
+                                        max={fig ? peakMax(fig.unit ?? "") : 1}
+                                        text={fig ? `${fig.value.toLocaleString("en-US")} ${fig.unit}${fig.confidence !== "reported" ? "ᵉ" : ""}` : ""}
+                                        higherIsBetter
+                                    />
+                                </td>
+                                <td className="num">
+                                    <MetricBar
+                                        value={j.magnetMassG.value / j.count}
+                                        max={magnetMax}
+                                        text={String(Math.round(j.magnetMassG.value / j.count))}
+                                        higherIsBetter
+                                    />
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
     );
 }
 
@@ -192,17 +194,14 @@ export function JointPanel({
     if (!joint) {
         return (
             <div className="hm-panel">
-                <p className="hm-panel-k with-logo">
-                    <CompanyLogo name={robot.brand} size={14} />
-                    {robot.brand}
-                </p>
-                <h3>{robot.name}</h3>
-                <p className="hm-summary">{robot.summary}</p>
-                {robot.notCounted && <p className="hm-inferred">Not counted: {robot.notCounted}</p>}
                 <JointList robot={robot} onSelect={onSelect} />
                 <p className="hm-hint">
                     <sup>e</sup> estimated · magnet per actuator
                 </p>
+                <Fold title="About this build" className="hm-about">
+                    <p className="hm-summary">{robot.summary}</p>
+                    {robot.notCounted && <p className="hm-inferred">Not counted: {robot.notCounted}</p>}
+                </Fold>
             </div>
         );
     }

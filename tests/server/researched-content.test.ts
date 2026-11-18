@@ -36,6 +36,8 @@ test("all root-relative editorial links and images resolve through the real serv
             .transform(html);
     }
     expect(targets.size).toBeGreaterThan(10);
+    // The footer's MCP endpoint answers POST only; its own tests cover it.
+    targets.delete("/mcp");
     for (const target of targets) {
         expect(await targetStatus(target), target).toBe(200);
     }
@@ -147,7 +149,7 @@ test("editorial routes serve static indexed HTML, source links, matching JSONLD 
 
 test("editorial navigation and comparison links remain discoverable outside the SPA fallback", async () => {
     const guide = await (await get("/guides/robot-actuator-selection")).text();
-    expect(guide).toContain('<a href="/guides">Guides</a>');
+    expect(guide).toContain('<a href="/guides">Engineering guides</a>');
     const comparison = await (
         await get("/comparisons/cubemars-ak80-9-vs-xiaomi-cybergear")
     ).text();

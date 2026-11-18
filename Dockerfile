@@ -20,6 +20,23 @@ COPY src/people ./src/people/
 COPY src/brands ./src/brands
 # The supply-chain registry and kit helpers (zod schemas stay server-side).
 COPY src/supply-chain ./src/supply-chain
+# Open-source robot directory (/open-source).
+COPY src/open-source ./src/open-source
+# Dated, cited trend points (/trends).
+COPY src/trends ./src/trends
+# Price history (/prices): analysis code and the weekly snapshot points.
+COPY src/prices ./src/prices
+COPY data/prices ./data/prices
+# Patent landscape (/patents): technology code sets and the committed aggregates.
+COPY src/patents ./src/patents
+COPY data/patents ./data/patents
+# Measured benchmark runs (/benchmarks, Measured panel, /compare overlay).
+COPY src/benchmarks ./src/benchmarks
+COPY data/benchmarks ./data/benchmarks
+# The /sdk scores, checks and evidence (page, badge and shared sources).
+COPY src/sdk ./src/sdk
+# Actuator page Related panel (humanoid and patent links).
+COPY src/related ./src/related
 # Logo.dev publishable key (public), baked into the bundle; unset draws monograms.
 ARG VITE_LOGO_DEV_TOKEN=""
 ENV VITE_LOGO_DEV_TOKEN=$VITE_LOGO_DEV_TOKEN
@@ -34,6 +51,9 @@ RUN bun install --frozen-lockfile --production --ignore-scripts
 COPY --from=build /app/frontend/dist ./frontend/dist
 COPY frontend/src/data ./frontend/src/data
 COPY src ./src
+COPY data/benchmarks ./data/benchmarks
+COPY data/prices ./data/prices
+COPY data/patents ./data/patents
 # Served as-is by src/server/routes: the agent skill and the og:images.
 COPY skills ./skills
 COPY media/og-image.png media/og-startups.png media/og-investors.png ./media/

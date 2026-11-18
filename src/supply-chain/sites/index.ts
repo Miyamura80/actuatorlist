@@ -1,44 +1,20 @@
-import type { CountryCode } from "../countries";
-import type { SourceId, Sourced } from "../sourced";
-import type { Stage } from "../stages";
+import { ALT_SITES } from "./alts";
+import { BOM_SITES } from "./bom";
+import { CHINA_SITES } from "./china";
+import { CHINA_PLANTS } from "./china-plants";
+import { JAPAN_SITES } from "./japan";
+import { JAPAN_PLANTS } from "./japan-plants";
+import { KOREA_SITES } from "./korea";
+import { LEGGED_SITES } from "./legged";
+import { PRECISION_SITES } from "./precision";
+import { type Site, hq } from "./types";
+import { US_PARTNER_SITES, US_SITES } from "./us";
+import { US_PLANTS } from "./us-plants";
 
 // Physical places: headquarters, plants, mines and refineries. `precision`
 // says how exact the pin is; "city" means the city centre, not the gate.
 
-export const SITE_KINDS = ["hq", "plant", "mine", "refinery", "rnd"] as const;
-export const SITE_STATUSES = [
-    "operating",
-    "construction",
-    "announced",
-    "closed",
-] as const;
-
-export interface Site {
-    id: string;
-    companyId: string;
-    kind: (typeof SITE_KINDS)[number];
-    name: string;
-    country: CountryCode;
-    admin1?: string;
-    lat: number;
-    lon: number;
-    precision: "site" | "city" | "region";
-    makes?: string[];
-    stages: Stage[];
-    capacity?: Sourced<number>;
-    opened?: Sourced<number>;
-    status?: (typeof SITE_STATUSES)[number];
-    sources: SourceId[];
-}
-
-type Hq = Pick<Site, "companyId" | "name" | "country" | "admin1" | "lat" | "lon"> & {
-    sources: SourceId[];
-};
-
-// A headquarters pinned to its city.
-function hq(id: string, h: Hq): Site {
-    return { id, kind: "hq", precision: "city", stages: [], status: "operating", ...h };
-}
+export { SITE_KINDS, SITE_STATUSES, type Site } from "./types";
 
 export const SITES: Site[] = [
     // MP Materials
@@ -290,6 +266,17 @@ export const SITES: Site[] = [
         lon: -81.4,
         sources: ["timken-site"],
     }),
+    // Schaeffler's own headquarters (sourced in /china), so its arcs to
+    // Chinese partners start in Germany, not at its first plant (in Korea).
+    hq("schaeffler-herzogenaurach", {
+        companyId: "schaeffler",
+        name: "Schaeffler headquarters",
+        country: "DE",
+        admin1: "Bavaria",
+        lat: 49.57,
+        lon: 10.88,
+        sources: ["wiki-schaeffler"],
+    }),
     // Robot and actuator makers
     hq("tesla-austin", {
         companyId: "tesla",
@@ -381,4 +368,25 @@ export const SITES: Site[] = [
         lon: 121.84,
         sources: ["tuopu-annual-report-2024"],
     }),
+    // Minth's group headquarters; its Asia-Pacific one is in ./china-extra.
+    hq("minth-taipei", {
+        companyId: "minth",
+        name: "Minth Group headquarters",
+        country: "TW",
+        lat: 25.08,
+        lon: 121.57,
+        sources: ["minth-annual-report-2025"],
+    }),
+    ...JAPAN_SITES,
+    ...JAPAN_PLANTS,
+    ...KOREA_SITES,
+    ...ALT_SITES,
+    ...BOM_SITES,
+    ...CHINA_SITES,
+    ...CHINA_PLANTS,
+    ...PRECISION_SITES,
+    ...US_SITES,
+    ...US_PLANTS,
+    ...US_PARTNER_SITES,
+    ...LEGGED_SITES,
 ];

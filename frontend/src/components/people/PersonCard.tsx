@@ -1,14 +1,6 @@
-import { LINK_LABEL, orgOf, schoolOf, type LinkKind, type Person } from "../../../../src/people";
+import type { ReactNode } from "react";
+import { initials, LINK_LABEL, orgOf, schoolOf, type LinkKind, type Person } from "../../../../src/people";
 import { OrgLogo } from "./OrgLogo";
-
-function initials(name: string): string {
-    return name
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((w) => w[0]?.toUpperCase() ?? "")
-        .slice(0, 2)
-        .join("");
-}
 
 // simple-icons marks (viewBox 0 0 24 24); web and scholar share a globe.
 const BRAND_PATH: Partial<Record<LinkKind, string>> = {
@@ -61,11 +53,12 @@ function Headshot({ person }: { person: Person }) {
 
 // One person: headshot, name and links. The core card (person.contributor
 // "core") is larger and adds the role; every other card adds the affiliation,
-// plus the role when it says more than "Contributor".
-export function PersonCard({ person }: { person: Person }) {
+// plus the role when it says more than "Contributor". `children` (the /people
+// role, why and key works) sits under the affiliation.
+export function PersonCard({ person, children }: { person: Person; children?: ReactNode }) {
     const core = person.contributor === "core";
     return (
-        <article className={`pc${core ? " pc-core" : ""}`} aria-label={person.name}>
+        <article id={person.id} className={`pc${core ? " pc-core" : ""}`} aria-label={person.name}>
             <Headshot person={person} />
             <div className="pc-body">
                 <div className="pc-head">
@@ -75,6 +68,7 @@ export function PersonCard({ person }: { person: Person }) {
                 {core && <p className="pc-role">{person.role}</p>}
                 {!core && <OrgLogo org={orgOf(person)} />}
                 {!core && person.role !== "Contributor" && <p className="pc-role pc-role-member">{person.role}</p>}
+                {children}
                 {person.links.length > 0 && (
                     <div className="pc-links">
                         {person.links.map((l) => (

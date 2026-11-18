@@ -80,33 +80,6 @@ interface Tip {
     y: number;
 }
 
-function FundTip({ fund }: { fund: Fund }) {
-    if (!fund.deals.length)
-        return (
-            <>
-                <TipHead name={fund.name} />
-                <span className="inv-tip-m">No actuated bet found, 2017 to Oct 2026</span>
-            </>
-        );
-    return (
-        <>
-            <TipHead name={fund.name} />
-            <span className="inv-tip-m">{KIND_LABEL[tierOf(fund)]}</span>
-            {fund.deals.map((x) => (
-                <div className="inv-tip-row" key={`${x.co}${x.round}`}>
-                    {companyOf(x).name}
-                    {x.lead ? " · led" : ""}
-                    <br />
-                    <span className="inv-tip-m">
-                        {x.round}
-                        {x.year ? `, ${x.year}` : ""}
-                    </span>
-                </div>
-            ))}
-        </>
-    );
-}
-
 function DealTip({ fund, deal }: { fund: Fund; deal: Deal }) {
     const c = companyOf(deal);
     return (
@@ -129,8 +102,99 @@ function DealTip({ fund, deal }: { fund: Fund; deal: Deal }) {
     );
 }
 
+// Deal chips under an opened fund row: budget two chips a line.
+const CHIP_H = 30;
+const CHIPS_PER_LINE = 2;
+const expandH = (n: number) => (n ? Math.ceil(n / CHIPS_PER_LINE) * CHIP_H + 12 : CHIP_H + 12);
+
+function DealChips({ deals, fund }: { deals: Deal[]; fund: Fund }) {
+    if (!deals.length) return <p className="inv-chips-none">No actuated round found, 2017 to Oct 2026</p>;
+    return (
+        <ul className="inv-chips" aria-label={`${fund.name} deals`}>
+            {deals.map((x) => {
+                const c = companyOf(x);
+                return (
+                    <li key={`${x.co}${x.round}`} className="inv-chip">
+                        <i className="inv-tip-kind" style={{ background: TIER_COLOR[c.kind] }} title={KIND_LABEL[c.kind]} />
+                        <CompanyLogo name={x.co} size={14} />
+                        <b>{c.name}</b>
+                        <span className="inv-chip-m">
+                            {x.round}
+                            {x.year ? ` ${x.year}` : ""}
+                        </span>
+                        {x.lead && <span className="inv-lead">LEAD</span>}
+                        {x.source ? (
+                            <a href={x.source} target="_blank" rel="noopener" aria-label={`Source for ${c.name} ${x.round}`}>
+                                {hostOf(x.source)}
+                            </a>
+                        ) : (
+                            <span className="inv-chip-m">press</span>
+                        )}
+                    </li>
+                );
+            })}
+        </ul>
+    );
+}
+
+// The fund name is a real button: it opens the row inline so every deal fact
+// is readable by tap or keyboard, not only on hover.
+function FundButton({
+    fund,
+    cy,
+    open,
+    onToggle,
+    color,
+    bold,
+}: {
+    fund: Fund;
+    cy: number;
+    open: boolean;
+    onToggle: () => void;
+    color: string;
+    bold?: boolean;
+}) {
+    return (
+        <g
+            className="inv-fold inv-hit"
+            tabIndex={0}
+            role="button"
+            aria-expanded={open}
+            aria-label={`${fund.name}: ${open ? "hide" : "show"} deals`}
+            onClick={onToggle}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onToggle();
+                }
+            }}
+        >
+            <rect x={0} y={cy - RH / 2} width={sx(Y0) - 4} height={RH} fill="transparent" />
+            <path
+                d={open ? `M2,${cy - 3} l4,4 l4,-4` : `M3,${cy - 5} l4,4 l-4,4`}
+                fill="none"
+                stroke="var(--muted)"
+                strokeWidth={1.4}
+            />
+            <LedgerLogo name={fund.name} cy={cy} />
+            <text x={14 + LOGO_DX} y={cy + 5} fill={color} fontSize={bold ? 15 : 13} fontWeight={bold ? 700 : 400}>
+                {fund.name}
+            </text>
+        </g>
+    );
+}
+
 export function FundLedger({ active, folded, onFold }: { active: readonly Kind[]; folded: boolean; onFold: () => void }) {
     const [tip, setTip] = useState<Tip | null>(null);
+    const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+    const toggleFund = (name: string) =>
+        setOpen((cur) => {
+            const next = new Set(cur);
+            if (next.has(name)) next.delete(name);
+            else next.add(name);
+            return next;
+        });
+    const extra = (f: Fund, deals: Deal[]) => (open.has(f.name) ? expandH(deals.length) : 0);
     const allOn = active.length === 3;
     const hover: Hover = (body) => ({
         onPointerEnter: (e: React.PointerEvent) => setTip({ body, x: e.clientX, y: e.clientY }),
@@ -157,7 +221,10 @@ export function FundLedger({ active, folded, onFold }: { active: readonly Kind[]
             ),
         }));
     const sideRows = folded && side.length ? 1 : side.length;
-    const H = TOP + (sideRows + groups.reduce((t, g) => t + g.funds.length, 0)) * RH + (groups.length + 1) * HEAD + 24;
+    const sideExtra = folded ? 0 : side.reduce((t, f) => t + extra(f, f.deals), 0);
+    const groupExtra = groups.reduce((t, g) => t + g.funds.reduce((u, f) => u + extra(f, visible(f)), 0), 0);
+    const H =
+        TOP + (sideRows + groups.reduce((t, g) => t + g.funds.length, 0)) * RH + sideExtra + groupExtra + (groups.length + 1) * HEAD + 24;
     const years = Array.from({ length: Y1 - Y0 }, (_, i) => Y0 + i);
     const sideLabel = allOn ? "ON THE SIDELINES" : "NO BET OF THE SELECTED TYPES";
     let y = TOP;
@@ -194,12 +261,12 @@ export function FundLedger({ active, folded, onFold }: { active: readonly Kind[]
     );
     y += HEAD;
     const sideTop = y;
-    y += sideRows * RH;
+    y += sideRows * RH + sideExtra;
 
     return (
         <>
             <div className="inv-scroll">
-                <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Each fund's actuated rounds by year, funds with none listed first">
+                <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Each fund's actuated rounds by year, funds with none listed first">
                     <defs>
                         <pattern id="inv-hatch" width={7} height={7} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                             <line x1={0} y1={0} x2={0} y2={7} stroke="var(--inv-out)" strokeOpacity={0.25} strokeWidth={1.5} />
@@ -224,7 +291,7 @@ export function FundLedger({ active, folded, onFold }: { active: readonly Kind[]
 
                     {sideHead}
                     {side.length > 0 && (
-                        <rect x={0} y={sideTop - 2} width={W} height={sideRows * RH + 4} fill="var(--inv-out)" fillOpacity={0.04} />
+                        <rect x={0} y={sideTop - 2} width={W} height={sideRows * RH + sideExtra + 4} fill="var(--inv-out)" fillOpacity={0.04} />
                     )}
                     {folded && side.length > 0 ? (
                         <g className="inv-hit" tabIndex={0} {...hover(<SidelineTip funds={side} allOn={allOn} />)}>
@@ -235,48 +302,62 @@ export function FundLedger({ active, folded, onFold }: { active: readonly Kind[]
                             <text x={sx(Y0) + 12} y={sideTop + RH / 2 + 4.5} fill="var(--text)" fontSize={12.5} fontWeight={600}>
                                 {fitNames(side.map((f) => f.name), sx(NOW) - sx(Y0) - 24)}
                             </text>
-                            <text x={W - R + 14} y={sideTop + RH / 2 + 5} className="inv-mono" fill="var(--inv-out)" fontSize={14} fontWeight={600}>
-                                0
-                            </text>
                         </g>
                     ) : (
-                        side.map((f, i) => {
-                            const top = sideTop + i * RH;
-                            const cy = top + RH / 2;
-                            const hidden = f.deals.length;
-                            const kinds = [...new Set(f.deals.map((x) => companyOf(x).kind))].map((k) => KIND_NOUN[k]);
-                            return (
-                                <g key={f.name} className="inv-hit" tabIndex={0} {...hover(<FundTip fund={f} />)}>
-                                    <rect x={0} y={top} width={W} height={RH} fill="transparent" />
-                                    <LedgerLogo name={f.name} cy={cy} />
-                                    <text x={14 + LOGO_DX} y={cy + 5} fill="var(--inv-out)" fontSize={15} fontWeight={700}>
-                                        {f.name}
-                                    </text>
-                                    <rect className="inv-mark" x={sx(Y0) + 2} y={top + 5} width={sx(NOW) - sx(Y0) - 4} height={RH - 10} fill="url(#inv-hatch)" stroke="var(--inv-out)" />
-                                    {hidden > 0 && (
-                                        <text x={sx(Y0) + 12} y={cy + 4.5} fill="var(--muted)" fontSize={11.5}>
-                                            Hidden by filter: {hidden} {hidden === 1 ? "round" : "rounds"} in {kinds.join(" and ")}
-                                        </text>
-                                    )}
-                                    <text x={W - R + 14} y={cy + 5} className="inv-mono" fill="var(--inv-out)" fontSize={14} fontWeight={600}>
-                                        0
-                                    </text>
-                                </g>
-                            );
-                        })
+                        (() => {
+                            let top = sideTop;
+                            return side.map((f) => {
+                                const rowTop = top;
+                                const cy = rowTop + RH / 2;
+                                const isOpen = open.has(f.name);
+                                top += RH + extra(f, f.deals);
+                                const hidden = f.deals.length;
+                                const kinds = [...new Set(f.deals.map((x) => companyOf(x).kind))].map((k) => KIND_NOUN[k]);
+                                return (
+                                    <g key={f.name}>
+                                        <FundButton fund={f} cy={cy} open={isOpen} onToggle={() => toggleFund(f.name)} color="var(--inv-out)" bold />
+                                        <rect x={sx(Y0) + 2} y={rowTop + 5} width={sx(NOW) - sx(Y0) - 4} height={RH - 10} fill="url(#inv-hatch)" stroke="var(--inv-out)" />
+                                        {hidden > 0 && (
+                                            <text x={sx(Y0) + 12} y={cy + 4.5} fill="var(--muted)" fontSize={11.5}>
+                                                Hidden by filter: {hidden} {hidden === 1 ? "round" : "rounds"} in {kinds.join(" and ")}
+                                            </text>
+                                        )}
+                                        {isOpen && (
+                                            <foreignObject x={14} y={rowTop + RH} width={W - 28} height={expandH(f.deals.length)}>
+                                                <DealChips deals={f.deals} fund={f} />
+                                            </foreignObject>
+                                        )}
+                                    </g>
+                                );
+                            });
+                        })()
                     )}
 
                     {groups.map((g) => {
                         const headY = y;
-                        y += HEAD + g.funds.length * RH;
+                        let top = headY + HEAD;
+                        y += HEAD + g.funds.reduce((t, f) => t + RH + extra(f, visible(f)), 0);
                         return (
                             <g key={g.kind}>
                                 <text x={14} y={headY + 22} className="inv-mono inv-group" fill="var(--muted)">
                                     {GROUP_LABEL[g.kind]} · {g.funds.length}
                                 </text>
-                                {g.funds.map((f, i) => (
-                                    <FundRow key={f.name} fund={f} deals={visible(f)} top={headY + HEAD + i * RH} hover={hover} />
-                                ))}
+                                {g.funds.map((f) => {
+                                    const deals = visible(f);
+                                    const rowTop = top;
+                                    top += RH + extra(f, deals);
+                                    return (
+                                        <FundRow
+                                            key={f.name}
+                                            fund={f}
+                                            deals={deals}
+                                            top={rowTop}
+                                            hover={hover}
+                                            open={open.has(f.name)}
+                                            onToggle={() => toggleFund(f.name)}
+                                        />
+                                    );
+                                })}
                             </g>
                         );
                     })}
@@ -305,18 +386,26 @@ interface HoverProps {
 }
 type Hover = (body: ReactNode) => HoverProps;
 
-function FundRow({ fund, deals, top, hover }: { fund: Fund; deals: Deal[]; top: number; hover: Hover }) {
+function FundRow({
+    fund,
+    deals,
+    top,
+    hover,
+    open,
+    onToggle,
+}: {
+    fund: Fund;
+    deals: Deal[];
+    top: number;
+    hover: Hover;
+    open: boolean;
+    onToggle: () => void;
+}) {
     const cy = top + RH / 2;
     const seen: Record<number, number> = {};
     return (
         <>
-            <g className="inv-hit" tabIndex={0} {...hover(<FundTip fund={fund} />)}>
-                <rect x={0} y={top} width={sx(Y0) - 4} height={RH} fill="transparent" />
-                <LedgerLogo name={fund.name} cy={cy} />
-                <text x={14 + LOGO_DX} y={cy + 5} fill="var(--text)" fontSize={13}>
-                    {fund.name}
-                </text>
-            </g>
+            <FundButton fund={fund} cy={cy} open={open} onToggle={onToggle} color="var(--text)" />
             <line x1={sx(Y0)} x2={sx(NOW)} y1={cy} y2={cy} stroke="var(--line-strong)" />
             {deals
                 .filter((x) => x.year !== null)
@@ -343,6 +432,11 @@ function FundRow({ fund, deals, top, hover }: { fund: Fund; deals: Deal[]; top: 
             <text x={W - R + 14} y={cy + 5} className="inv-mono" fill="var(--muted)" fontSize={13}>
                 {deals.length}
             </text>
+            {open && (
+                <foreignObject x={14} y={top + RH} width={W - 28} height={expandH(deals.length)}>
+                    <DealChips deals={deals} fund={fund} />
+                </foreignObject>
+            )}
         </>
     );
 }

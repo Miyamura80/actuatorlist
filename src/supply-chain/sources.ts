@@ -1,4 +1,15 @@
+import { PEOPLE_SOURCES } from "../people/sources";
+import { SDK_SOURCES } from "../sdk/sources";
+import { ALT_SOURCES } from "./alts/sources";
+import { BOM_SOURCES } from "./bom/sources";
+import { LEGGED_SOURCES } from "./companies/legged-sources";
+import { CHINA_SOURCES } from "./country-pages/china-sources";
+import { JAPAN_SOURCES } from "./country-pages/japan-sources";
+import { KOREA_SOURCES } from "./country-pages/korea-sources";
+import { US_PARTNER_SOURCES, US_SOURCES } from "./country-pages/us-sources";
 import { POLICY_SOURCES } from "./policy/sources";
+import { PRECISION_SOURCES } from "./processes/precision-sources";
+import { PROCESS_SOURCES } from "./processes/sources";
 import type { ReuseAllowlist, SourceReuse } from "./reuse";
 import type { SourceId } from "./sourced";
 
@@ -23,7 +34,9 @@ export interface SourceRef {
     title: string;
     publisher: string;
     url: string;
-    accessed: string;
+    // ISO date we opened the document. Absent when the figure was taken
+    // from search results and the page itself was never opened.
+    accessed?: string;
     kind: (typeof SOURCE_KINDS)[number];
     // Only public excerpts of a paywalled source may be cited.
     paywalled?: boolean;
@@ -54,6 +67,41 @@ function metals(
     reuse: SourceReuse,
 ): SourceRef {
     return { ...src(id, publisher, title, url, kind, reuse), accessed: "2026-10-26" };
+}
+
+// One USGS Mineral Commodity Summaries rare-earths chapter per edition, read
+// for the /metals oxide price history. US federal work, public domain.
+function mcsRee(edition: number, url: string): SourceRef {
+    return {
+        ...src(
+            `usgs-mcs-${edition}-ree`,
+            "USGS",
+            `Mineral Commodity Summaries ${edition}: Rare Earths`,
+            url,
+            "government",
+            "open",
+        ),
+        accessed: "2026-11-11",
+    };
+}
+
+const MCS_ASSETS =
+    "https://d9-wret.s3.us-west-2.amazonaws.com/assets/palladium/production";
+
+// One USGS Minerals Yearbook rare-earths chapter per year. Its oxide price
+// table carries Pr and Sm, which the Commodity Summaries only add in 2026.
+function mybRee(year: number, url: string): SourceRef {
+    return {
+        ...src(
+            `usgs-myb-${year}-ree`,
+            "USGS",
+            `Minerals Yearbook ${year}: Rare Earths`,
+            url,
+            "government",
+            "open",
+        ),
+        accessed: "2026-11-11",
+    };
 }
 
 export const SOURCES: SourceRef[] = [
@@ -165,14 +213,6 @@ export const SOURCES: SourceRef[] = [
         "facts",
     ),
     // Gears, screws and bearings
-    src(
-        "filingreader-hds-fy2025",
-        "FilingReader",
-        "Harmonic Drive Systems FY25 profit drops amid sluggish sales",
-        "https://filingreader.com/news-wire/tokyo/2025-05-22/harmonic-drive-systems-fy25-profit-drops-amid-sluggish-sales",
-        "press",
-        "facts",
-    ),
     src(
         "jaxa-hds-hotaka",
         "JAXA",
@@ -515,6 +555,18 @@ export const SOURCES: SourceRef[] = [
         "government",
         "open",
     ),
+    mcsRee(2024, "https://pubs.usgs.gov/periodicals/mcs2024/mcs2024-rare-earths.pdf"),
+    mcsRee(2023, "https://pubs.usgs.gov/periodicals/mcs2023/mcs2023-rare-earths.pdf"),
+    mcsRee(2022, "https://pubs.usgs.gov/periodicals/mcs2022/mcs2022-rare-earths.pdf"),
+    mcsRee(2020, "https://pubs.usgs.gov/periodicals/mcs2020/mcs2020-rare-earths.pdf"),
+    mcsRee(2019, `${MCS_ASSETS}/atoms/files/mcs-2019-raree.pdf`),
+    mcsRee(2018, `${MCS_ASSETS}/mineral-pubs/rare-earth/mcs-2018-raree.pdf`),
+    mybRee(2020, "https://pubs.usgs.gov/myb/vol1/2020/myb1-2020-rare-earths.pdf"),
+    mybRee(2019, "https://pubs.usgs.gov/myb/vol1/2019/myb1-2019-rare-earths.pdf"),
+    mybRee(2018, "https://pubs.usgs.gov/myb/vol1/2018/myb1-2018-rare-earths.pdf"),
+    mybRee(2017, `${MCS_ASSETS}/atoms/files/myb1-2017-raree.pdf`),
+    mybRee(2016, `${MCS_ASSETS}/atoms/files/myb1-2016-raree.pdf`),
+    mybRee(2015, `${MCS_ASSETS}/mineral-pubs/rare-earth/myb1-2015-raree.pdf`),
     metals(
         "usgs-mcs-2016-ree",
         "USGS",
@@ -580,7 +632,8 @@ export const SOURCES: SourceRef[] = [
         "filing",
         "facts",
     ),
-    // Monthly 2026 prices: Shanghai Metals Market benchmarks as republished
+    // A few 2026 Shanghai Metals Market readings as republished; SMM is a paid
+    // feed, so each page backs at most 10 records and its history is not kept.
     metals(
         "rem-nd-price-2026",
         "Rare Earth Mining (SMM data)",
@@ -606,19 +659,41 @@ export const SOURCES: SourceRef[] = [
         "facts",
     ),
     ...POLICY_SOURCES,
+    ...PROCESS_SOURCES,
+    ...PRECISION_SOURCES,
+    ...JAPAN_SOURCES,
+    ...CHINA_SOURCES,
+    ...US_SOURCES,
+    ...US_PARTNER_SOURCES,
+    ...SDK_SOURCES,
+    ...KOREA_SOURCES,
+    ...PEOPLE_SOURCES,
+    ...ALT_SOURCES,
+    ...LEGGED_SOURCES,
+    ...BOM_SOURCES,
 ];
 
 // Facts sources allowed to back more than FACTS_MAX_RECORDS records (see
 // ./licence.ts), each with why that is not copying the source's table.
 export const FACTS_ALLOWLIST: ReuseAllowlist<SourceId> = {
-    "rem-nd-price-2026":
-        "One public spot quote per month for Nd metal and NdPr oxide in 2026, read off the live price page; no history table is copied.",
-    "rem-tb-price-2026":
-        "One public spot quote per month for Tb metal in 2026, read off the live price page; no history table is copied.",
+    "iea-rare-earths-2025":
+        "Two headline country shares (refining and magnets) reused by each page that shows those stages; no table is copied.",
     "arnold-dysprosium-2015":
         "A few Dy-by-grade figures from one white paper, reused as inputs to our own modeled grades and element notes.",
     "nus-eai-rare-earths-2025":
         "Background brief cited once per dated event or price driver in our own words; no table is taken.",
+    "jda-ndfeb-composition":
+        "The boron share of NdFeB, one figure reused in /metals grades and in each modeled /bom magnet recipe.",
+    "civils-metal-density":
+        "Three textbook densities (steel, copper, aluminium) reused to weigh our own modeled /bom part volumes; no table is copied.",
+    "alliance-magnet-properties":
+        "One NdFeB density reused to weigh each modeled /bom magnet; no table is copied.",
+    "optimusk-actuators":
+        "One list of the Optimus linear actuator's components, cited by each /bom node it names; costs and geometry are ours.",
+    "simplexity-go2-motor":
+        "One teardown's layout of the Go2 joint motor, cited by each /bom node it describes; sizes and masses are our model.",
+    "rcdrone-erob80":
+        "One shop listing for the eRob 80 joint (price, brake, encoder), cited by each /bom node of that joint; geometry is ours.",
 };
 
 const byId = new Map(SOURCES.map((s) => [s.id, s]));

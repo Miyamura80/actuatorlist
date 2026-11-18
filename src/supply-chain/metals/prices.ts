@@ -2,10 +2,12 @@ import type { Sourced } from "../sourced";
 
 // Cited price history of the magnet metals, US$ per kg. This is the single
 // source of commodity prices for the site: /metals draws it and /bom costs
-// raw material with priceAt(). Long-run points are USGS annual averages and
-// year-end ranges; 2026 points are monthly Shanghai Metals Market (SMM)
-// readings. No point is interpolated: a month without a reading carries the
-// last one forward and says so.
+// raw material with priceAt(). Long-run points are USGS annual averages
+// (Nd, Dy and Tb oxide from 2014, the other oxides from 2021) and year-end
+// ranges for 2011-2015 (public domain). SMM is a paid feed, so 2026 metal prices
+// are only a few cited SMM readings (1 March and 30 September), not its
+// monthly history. No point is interpolated: a month without a reading
+// carries the last one forward and says so.
 
 export type PriceMarket = "cn-domestic" | "fob-china" | "lme";
 export type PriceBasis = "annual-average" | "year-end" | "spot";
@@ -67,24 +69,40 @@ function point(
     };
 }
 
-// USGS Mineral Commodity Summaries, three editions.
+// USGS Mineral Commodity Summaries rare-earths chapters, one source per
+// edition. Each edition prints five years of oxide prices; the last of them
+// is a USGS estimate for the year just ended and is restated a year later.
 const MCS16 = ["usgs-mcs-2016-ree"];
-const MCS21 = ["usgs-mcs-2021-ree"];
+const mcs = (edition: number) => [`usgs-mcs-${edition}-ree`];
 
-// Year-end price range 2011-2015 (MCS 2016, Metal-Pages); the midpoint is drawn.
+// Year-end price range 2011-2014 (MCS 2016, Metal-Pages); the midpoint is drawn.
 function yearEnds(lowHigh: [number, number][]): PricePoint[] {
     return lowHigh.map(([lo, hi], i) =>
-        point(
-            `${2011 + i}-12-31`,
-            "year-end",
-            (lo + hi) / 2,
-            MCS16,
-            `Year-end range $${lo} to $${hi}/kg (Metal-Pages); midpoint drawn.`,
-            "estimated",
-            [lo, hi],
-        ),
+        yearEnd(2011 + i, lo, hi, MCS16, "Metal-Pages"),
     );
 }
+
+function yearEnd(
+    year: number,
+    lo: number,
+    hi: number,
+    sources: string[],
+    by: string,
+): PricePoint {
+    return point(
+        `${year}-12-31`,
+        "year-end",
+        (lo + hi) / 2,
+        sources,
+        `Year-end range $${lo} to $${hi}/kg (${by}); midpoint drawn.`,
+        "estimated",
+        [lo, hi],
+    );
+}
+
+// 2015 year-end range as restated in the 2018 edition (Argus).
+const yearEnd2015 = (lo: number, hi: number) =>
+    yearEnd(2015, lo, hi, mcs(2018), "Argus");
 
 // Annual averages for five consecutive years from one edition; the last year
 // of an edition is the USGS estimate for the year just ended.
@@ -107,9 +125,48 @@ function averages(
     });
 }
 
-const ARGUS_21 = "Annual average (Argus); basis not stated in this edition.";
-const ARGUS_26 = "Annual average, free on board China (Argus).";
-const HEAVY_26 = "Annual average, free on board China (Argus, Asian Metal).";
+// Settled annual averages 2014-2020, one year each, from the latest edition
+// that prints the year as a final figure rather than an estimate. These
+// editions credit Argus but do not say whether the price is FOB China.
+function settled(
+    rows: [year: number, value: number, edition: number][],
+    grade: string,
+): PricePoint[] {
+    return rows.map(([year, v, edition]) =>
+        point(
+            String(year),
+            "annual-average",
+            v,
+            mcs(edition),
+            `Annual average, ${grade} (Argus); the ${edition} edition does not state the price basis.`,
+        ),
+    );
+}
+
+// Pr and Sm annual averages 2014-2020 from the Minerals Yearbook oxide price
+// table, each year from the latest yearbook that prints it. The 2015 yearbook
+// quotes Metal-Pages at 99% purity; later ones quote Argus at 99.5%. Neither
+// states the price basis, and Sm is printed to the whole dollar.
+function yearbook(
+    rows: [year: number, value: number, edition: number][],
+): PricePoint[] {
+    return rows.map(([year, v, edition]) => {
+        const by = edition === 2015 ? "99% min (Metal-Pages)" : "99.5% min (Argus)";
+        return point(
+            String(year),
+            "annual-average",
+            v,
+            [`usgs-myb-${edition}-ree`],
+            `Annual average, ${by}, USGS Minerals Yearbook ${edition}; price basis not stated.`,
+        );
+    });
+}
+
+const fob = (grade: string) => `Annual average, ${grade}, free on board China (Argus).`;
+const fobHeavy = (grade: string) =>
+    `Annual average, ${grade}, free on board China (Argus, Asian Metal).`;
+const MCS26 = mcs(2026);
+const MCS26_HEAVY = ["usgs-mcs-2026-ree-heavy"];
 
 function smm(
     readings: [string, number][],
@@ -125,8 +182,9 @@ const ND = ["rem-nd-price-2026"];
 const DY = ["rem-dy-price-2026"];
 const TB = ["rem-tb-price-2026"];
 
-// One reading per month where published; 1 May 2026 is left out for Nd, NdPr
-// and Dy because the source repeats the 1 April figure exactly.
+// A few SMM readings per series, read off a page that republishes the paid
+// feed: the latest (30 September 2026) for every series, plus 1 March for
+// Dy and Tb to show the 2026 rise. The source backs at most 10 records.
 export const PRICE_SERIES: PriceSeries[] = [
     {
         id: "ndpr-oxide",
@@ -135,7 +193,9 @@ export const PRICE_SERIES: PriceSeries[] = [
         form: "oxide",
         market: "fob-china",
         unit: UNIT,
-        points: averages(2021, [92, 124, 75, 55, 69], ["usgs-mcs-2026-ree"], ARGUS_26),
+        // NdPr oxide first appears in the 2026 edition; no earlier USGS
+        // publication prints it.
+        points: averages(2021, [92, 124, 75, 55, 69], MCS26, fob("99% min")),
     },
     {
         id: "nd-oxide",
@@ -150,8 +210,8 @@ export const PRICE_SERIES: PriceSeries[] = [
                 [75, 80],
                 [65, 70],
                 [56, 60],
-                [37, 42],
             ]),
+            yearEnd2015(39, 42),
             point(
                 "2012-01-01",
                 "spot",
@@ -159,8 +219,19 @@ export const PRICE_SERIES: PriceSeries[] = [
                 ["usgs-mcs-2013-ree"],
                 "Neodymium oxide began 2012 at $195/kg and fell to $80/kg by year-end.",
             ),
-            ...averages(2016, [40, 50, 50, 45, 47], MCS21, ARGUS_21),
-            ...averages(2021, [98, 134, 78, 56, 73], ["usgs-mcs-2026-ree"], ARGUS_26),
+            ...settled(
+                [
+                    [2014, 63, 2019],
+                    [2015, 48, 2020],
+                    [2016, 40, 2021],
+                    [2017, 50, 2022],
+                    [2018, 50, 2023],
+                    [2019, 45, 2024],
+                    [2020, 49, 2025],
+                ],
+                "99.5% min",
+            ),
+            ...averages(2021, [98, 134, 78, 56, 73], MCS26, fob("99.5% min")),
         ],
     },
     {
@@ -170,7 +241,19 @@ export const PRICE_SERIES: PriceSeries[] = [
         form: "oxide",
         market: "fob-china",
         unit: UNIT,
-        points: averages(2021, [93, 128, 76, 56, 74], ["usgs-mcs-2026-ree"], ARGUS_26),
+        points: [
+            ...yearbook([
+                [2014, 121, 2015],
+                [2015, 76, 2016],
+                [2016, 52, 2017],
+                [2017, 65, 2018],
+                [2018, 63, 2019],
+                [2019, 54, 2020],
+                [2020, 47, 2020],
+            ]),
+            // From 2021 the grade quoted is 99.99%, not 99.5%.
+            ...averages(2021, [93, 128, 76, 56, 74], MCS26, fob("99.99% min")),
+        ],
     },
     {
         id: "dy-oxide",
@@ -185,14 +268,25 @@ export const PRICE_SERIES: PriceSeries[] = [
                 [600, 630],
                 [440, 490],
                 [320, 360],
-                [215, 240],
             ]),
-            ...averages(2016, [198, 187, 179, 239, 258], MCS21, ARGUS_21),
+            yearEnd2015(215, 240),
+            ...settled(
+                [
+                    [2014, 395, 2019],
+                    [2015, 279, 2020],
+                    [2016, 198, 2021],
+                    [2017, 187, 2022],
+                    [2018, 179, 2023],
+                    [2019, 239, 2024],
+                    [2020, 261, 2025],
+                ],
+                "99.5% min",
+            ),
             ...averages(
                 2021,
                 [410, 382, 330, 257, 239],
-                ["usgs-mcs-2026-ree-heavy"],
-                HEAVY_26,
+                MCS26_HEAVY,
+                fobHeavy("99.5% min"),
             ),
         ],
     },
@@ -209,14 +303,25 @@ export const PRICE_SERIES: PriceSeries[] = [
                 [1200, 1300],
                 [800, 850],
                 [590, 640],
-                [410, 490],
             ]),
-            ...averages(2016, [415, 501, 455, 507, 628], MCS21, ARGUS_21),
+            yearEnd2015(410, 470),
+            ...settled(
+                [
+                    [2014, 713, 2019],
+                    [2015, 564, 2020],
+                    [2016, 415, 2021],
+                    [2017, 501, 2022],
+                    [2018, 455, 2023],
+                    [2019, 507, 2024],
+                    [2020, 670, 2025],
+                ],
+                "99.99% min",
+            ),
             ...averages(
                 2021,
                 [1340, 2050, 1300, 812, 1010],
-                ["usgs-mcs-2026-ree-heavy"],
-                HEAVY_26,
+                MCS26_HEAVY,
+                fobHeavy("99.99% min"),
             ),
         ],
     },
@@ -227,12 +332,18 @@ export const PRICE_SERIES: PriceSeries[] = [
         form: "oxide",
         market: "fob-china",
         unit: UNIT,
-        points: averages(
-            2021,
-            [2.03, 3.34, 2.17, 2.01, 2.82],
-            ["usgs-mcs-2026-ree"],
-            ARGUS_26,
-        ),
+        points: [
+            ...yearbook([
+                [2014, 7, 2015],
+                [2015, 3, 2016],
+                [2016, 2, 2017],
+                [2017, 2, 2018],
+                [2018, 2, 2019],
+                [2019, 2, 2020],
+                [2020, 2, 2020],
+            ]),
+            ...averages(2021, [2.03, 3.34, 2.17, 2.01, 2.82], MCS26, fob("99.5% min")),
+        ],
     },
     {
         id: "co-metal",
@@ -264,19 +375,7 @@ export const PRICE_SERIES: PriceSeries[] = [
         form: "metal",
         market: "cn-domestic",
         unit: UNIT,
-        points: smm(
-            [
-                ["2026-03-01", 117.27],
-                ["2026-04-01", 124.87],
-                ["2026-06-01", 121.95],
-                ["2026-07-01", 145.88],
-                ["2026-08-03", 145.48],
-                ["2026-09-03", 141.79],
-                ["2026-09-30", 140.88],
-            ],
-            ND,
-            SMM_CN,
-        ),
+        points: smm([["2026-09-30", 140.88]], ND, SMM_CN),
     },
     {
         id: "nd-metal-fob",
@@ -294,19 +393,7 @@ export const PRICE_SERIES: PriceSeries[] = [
         form: "alloy",
         market: "cn-domestic",
         unit: UNIT,
-        points: smm(
-            [
-                ["2026-03-01", 108.64],
-                ["2026-04-01", 126.16],
-                ["2026-06-01", 109.55],
-                ["2026-07-01", 133.02],
-                ["2026-08-03", 133.67],
-                ["2026-09-03", 131.02],
-                ["2026-09-30", 133.44],
-            ],
-            ND,
-            SMM_CN,
-        ),
+        points: smm([["2026-09-30", 133.44]], ND, SMM_CN),
     },
     {
         id: "pr-metal-cn",
@@ -336,11 +423,6 @@ export const PRICE_SERIES: PriceSeries[] = [
         points: smm(
             [
                 ["2026-03-01", 191.08],
-                ["2026-04-01", 220.93],
-                ["2026-06-01", 208.68],
-                ["2026-07-01", 261.63],
-                ["2026-08-03", 231.35],
-                ["2026-09-03", 239.12],
                 ["2026-09-30", 233.55],
             ],
             DY,
@@ -357,12 +439,6 @@ export const PRICE_SERIES: PriceSeries[] = [
         points: smm(
             [
                 ["2026-03-01", 803.96],
-                ["2026-04-01", 970.18],
-                ["2026-05-01", 789.79],
-                ["2026-06-01", 969.69],
-                ["2026-07-01", 1179.54],
-                ["2026-08-03", 1094.68],
-                ["2026-09-03", 1097.08],
                 ["2026-09-30", 1074.34],
             ],
             TB,

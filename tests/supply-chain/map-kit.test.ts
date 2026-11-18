@@ -85,11 +85,47 @@ describe("map data", () => {
         expect(tesla?.to.country).toBe("US");
         expect(tesla?.confidence).toBe("estimated");
         expect(companyAnchor("tesla")?.kind).toBe("hq");
-        // Nabtesco has no headquarters site: its first plant anchors it.
-        expect(companyAnchor("nabtesco")?.id).toBe("nabtesco-tsu");
-        expect(arcsTouching(arcs, "KR").map((a) => a.id)).toEqual([
-            "hyundai-mobis--boston-dynamics",
-        ]);
+        // Leaderdrive has no headquarters site: its first plant anchors it.
+        expect(companyAnchor("leaderdrive")?.id).toBe("leaderdrive-suzhou");
+        // The full Korean arc set, so a dropped or miswired link fails here.
+        expect(
+            arcsTouching(arcs, "KR")
+                .map((a) => a.id)
+                .sort(),
+        ).toEqual(
+            [
+                "arafura--hyundai-motor",
+                "asm--neo-performance",
+                "asm--noveon-magnetics",
+                "asm--usa-rare-earth",
+                "asm--vac",
+                "boston-dynamics--hyundai-motor",
+                "doosan-robotics--onexia",
+                "energy-fuels--asm",
+                "energy-fuels--posco-international",
+                "hyundai-mobis--boston-dynamics",
+                "hyundai-motor--boston-dynamics",
+                "komir--arafura",
+                "komir--asm",
+                "lg-electronics--bear-robotics",
+                "lg-innotek--boston-dynamics",
+                "lg-innotek--figure",
+                "lig-nex1--ghost-robotics",
+                "lynas--ls-eco-energy",
+                "persona-ai--hd-hyundai",
+                "posco-international--hyundai-motor",
+                "posco-international--reelement",
+                "reelement--posco-international",
+                "samsung-electro-mechanics--tesla",
+                "samsung-electronics--rainbow-robotics",
+                "snt-motiv--hyundai-motor",
+                "spg--kimm",
+                "spg--rainbow-robotics",
+                "star-group--posco-international",
+                "thk--samick-thk",
+                "woorim-pts--boston-dynamics",
+            ].sort(),
+        );
     });
 
     test("pins carry the short company label and region for on-map callouts", () => {

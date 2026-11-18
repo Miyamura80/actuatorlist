@@ -132,14 +132,28 @@ function operationObject(op: Operation, tag: string): Json {
 
 function tagFor(path: string): string {
     if (path.includes("/robots") || path.includes("/humanoids")) return "robots";
+    if (path.includes("/open-robots")) return "robots";
     if (
         path.includes("/companies") ||
         path.includes("/sites") ||
         path.includes("/metal") ||
-        path.includes("/policy")
+        path.includes("/policy") ||
+        path.includes("/processes") ||
+        path.includes("/alts") ||
+        path.includes("/bom") ||
+        path.includes("/countries")
     )
         return "supply-chain";
+    if (path.includes("/benchmarks")) return "actuators";
+    if (
+        path.includes("/trends") ||
+        path.includes("/prices") ||
+        path.includes("/patents")
+    )
+        return "trends";
     if (path.includes("/actuators")) return "actuators";
+    if (path.includes("/sdk")) return "actuators";
+    if (path.includes("/people")) return "people";
     if (path.startsWith("/api/v1/")) return "taxonomy";
     return "meta";
 }
@@ -227,9 +241,19 @@ export function buildOpenApi(operations: readonly Operation[]): Json {
             },
             { name: "meta", description: "Discovery: index and this document." },
             {
+                name: "trends",
+                description:
+                    "Dated, cited points over time: per-actuator price history (/prices), patent families per technology and year (/patents), actuator list prices, strain-wave gear rated life, humanoid and industrial robot market shares, the rotary and linear actuator split, roller screw cost, how fast AI and other technologies get cheaper, and humanoid battery runtime.",
+            },
+            {
+                name: "people",
+                description:
+                    "Leading people in actuators and rare-earth magnet supply, with affiliations, key works and sources.",
+            },
+            {
                 name: "supply-chain",
                 description:
-                    "Companies, sites, magnet metals (supply, reserves, prices) and policy measures along the actuator supply chain, with citations.",
+                    "Companies, sites, magnet metals (supply, reserves, prices), policy measures, manufacturing process steps, actuator bill-of-materials teardowns, alternative actuator technologies and country pages along the actuator supply chain, with citations.",
             },
         ],
         externalDocs: { description: "Developer guide", url: absoluteUrl("/docs/api") },

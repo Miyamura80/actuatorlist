@@ -17,7 +17,7 @@ import { CountryMap } from "../src/components/maps/CountryMap";
 import { Arcs } from "../src/components/maps/Arcs";
 import { layers, monogram } from "../src/components/flows/graph-layout";
 import { NodeBadge } from "../src/components/flows/NodeBadge";
-import { ProcessStepChip } from "../src/components/flows/ProcessStepChip";
+import { ProcessStepChip, stepHref } from "../src/components/flows/ProcessStepChip";
 import { flowPath, layoutSankey } from "../src/components/flows/sankey-layout";
 import { SupplyGraph } from "../src/components/flows/SupplyGraph";
 import { ValueSankey } from "../src/components/flows/ValueSankey";
@@ -25,6 +25,9 @@ import { FootnotesProvider } from "../src/components/supply-chain/footnotes";
 import { LabMaps } from "../src/pages/supply-chain/lab/LabMaps";
 import { SEGMENT_COLOR, SEGMENT_PICTO, arcsTouching, mixPhrase, segmentMix, sitePins, supplyArcs } from "../../src/supply-chain/map";
 import { mixSize } from "../../src/supply-chain/map-groups";
+import { CHINA_SITES } from "../../src/supply-chain/sites/china";
+import { CHINA_PLANTS } from "../../src/supply-chain/sites/china-plants";
+import { getCountryPage, type CountryPage as CountryPageData } from "../../src/supply-chain/country-pages";
 const geo = (f: string) => JSON.parse(readFileSync(new URL(`../public/geo/${f}`, import.meta.url), "utf8")) as MapTopology;
 const WORLD = geo("world-110m.json");
 const JP = geo("jp-admin1.json");
@@ -56,10 +59,14 @@ test("?site= selects a pin, and picking another pin rewrites the query", () => {
 
 test("?company= opens the drawer with the company's sites", () => {
     window.history.replaceState({}, "", "/lab/supply-chain?company=jl-mag");
-    const c = render(<LabMaps topologies={{ world: WORLD, JP }} />).container;
+    const c = render(<FootnotesProvider><LabMaps topologies={{ world: WORLD, JP }} /></FootnotesProvider>).container;
     const drawer = c.querySelector(".mk-drawer");
     expect(drawer?.querySelector("h3")?.textContent).toBe("JL MAG Rare-Earth");
-    expect(drawer?.querySelectorAll(".sc-lab-sites li").length).toBeGreaterThanOrEqual(3);
+    // The shared company card: its sites, then a site expands in place.
+    expect(drawer?.querySelectorAll(".sc-sites li").length).toBeGreaterThanOrEqual(3);
+    act(() => { fireEvent.click(drawer?.querySelector(".sc-sites li button") as Element); });
+    expect(readSelection(window.location.search).site).not.toBeNull();
+    expect(c.querySelector(".mk-drawer .sc-site")).not.toBeNull();
     act(() => { fireEvent.click(drawer?.querySelector(".mk-drawer-close") as Element); });
     expect(window.location.search).toBe("");
     expect(c.querySelector(".mk-drawer")).toBeNull();
@@ -83,7 +90,10 @@ test("pins are keyboard-focusable buttons named by site, segment and precision",
 });
 
 test("group markers show what they hold: segment tiles in chain order with counts", () => {
-    const here = PINS.filter((p) => p.country === "CN");
+    // The seed sites only: on the full /china set the named regional
+    // clusters absorb the city groups (tested below).
+    const china = new Set([...CHINA_SITES, ...CHINA_PLANTS].map((x) => x.id));
+    const here = PINS.filter((p) => p.country === "CN" && !china.has(p.id));
     const c = render(<CountryMap code="CN" sites={here} topology={CN}>
         <ClusterZoom pins={here} clusters={LAB_CLUSTERS} />
     </CountryMap>).container;
@@ -113,6 +123,28 @@ test("group markers show what they hold: segment tiles in chain order with count
     expect(index.every((b) => b.querySelector(".mk-mix .ot") && /: \d+ /.test(b.getAttribute("aria-label") ?? ""))).toBe(true);
 });
 
+test("the full /china site set groups into named regional clusters at country zoom", () => {
+    const page = getCountryPage("china") as CountryPageData;
+    const here = PINS.filter((p) => p.country === "CN");
+    const c = render(<CountryMap code="CN" sites={here} topology={CN}>
+        <ClusterZoom pins={here} clusters={page.clusters} />
+    </CountryMap>).container;
+    const groups = [...c.querySelectorAll<HTMLButtonElement>(".mk-cluster")];
+    expect(groups.length).toBeGreaterThan(1);
+    // Every site is drawn once: as a lone pin or inside exactly one group.
+    const grouped = groups.flatMap((g) => (g.getAttribute("data-group") ?? "").split("|"));
+    const lone = [...c.querySelectorAll("[data-pin]")].map((p) => p.getAttribute("data-pin"));
+    expect([...grouped, ...lone].sort()).toEqual(here.map((p) => p.id).sort());
+    for (const g of groups) {
+        expect(g.tagName).toBe("BUTTON");
+        const ids = (g.getAttribute("data-group") ?? "").split("|");
+        expect(g.getAttribute("aria-label")).toContain(mixPhrase(segmentMix(here.filter((p) => ids.includes(p.id)))));
+    }
+    // A named cluster labels its group and zooms rather than listing.
+    const baotou = groups.find((g) => g.getAttribute("aria-label")?.startsWith("Baotou rare earth hub:"));
+    expect(baotou?.getAttribute("aria-label")).toEndWith("Zoom in");
+});
+
 test("group markers never overlap each other or a lone pin", () => {
     const sizes = new Map<string, [number, number]>([["a", [40, 40]], ["b", [17, 17]], ["c", [17, 17]]]);
     const placed = [{ id: "a", at: [0, 0] as [number, number] }, { id: "b", at: [25, 0] as [number, number] }, { id: "c", at: [100, 0] as [number, number] }];
@@ -135,13 +167,36 @@ test("every map carries a hidden table equivalent", () => {
 });
 
 test("country map fits admin-1 outlines and arcs leaving it end in a country chip", () => {
-    const arcs = arcsTouching(supplyArcs(), "JP");
+    const arcs = arcsTouching(supplyArcs(), "JP").filter((a) => a.id === "nabtesco--fanuc" || a.id === "nabtesco--yaskawa");
     const c = render(<CountryMap code="JP" topology={JP}><Arcs arcs={arcs} hrefFor={(code) => `/${code.toLowerCase()}`} /></CountryMap>).container;
     expect(c.querySelectorAll(".mk-land").length).toBe(47);
     // Nabtesco to FANUC and Yaskawa are domestic: no chips, two arcs.
     expect(c.querySelectorAll(".mk-chip")).toHaveLength(0);
     const leaving = render(<CountryMap code="JP" topology={JP}><Arcs arcs={supplyArcs().filter((a) => a.id === "hyundai-mobis--boston-dynamics")} hrefFor={(code) => `/${code.toLowerCase()}`} /></CountryMap>).container;
     expect(leaving.querySelectorAll(".mk-chip").length).toBeGreaterThan(0);
+});
+
+test("partnership arcs run both ways: no arrowhead and an A ↔ B tooltip", () => {
+    const arcs = supplyArcs().filter((a) => a.id === "fanuc--mujin" || a.id === "nabtesco--fanuc");
+    const c = render(<CountryMap code="JP" topology={JP}><Arcs arcs={arcs} /></CountryMap>).container;
+    const line = (kind: string) => c.querySelector(`.mk-arc-kind-${kind} .mk-arc-line`) as Element;
+    expect(line("supply").getAttribute("marker-end")).toMatch(/^url\(#/);
+    expect(line("partnership").getAttribute("marker-end")).toBeNull();
+    act(() => { fireEvent.pointerEnter(c.querySelector(".mk-arc-kind-partnership") as Element); });
+    const tip = c.querySelector(".mk-arc-tip") as Element;
+    expect(tip.firstChild?.textContent).toBe("FANUC ↔ Mujin");
+});
+
+test("arc chips word the relation by link kind", () => {
+    const chip = (id: string) => {
+        const c = render(<CountryMap code="JP" topology={JP}><Arcs arcs={supplyArcs().filter((a) => a.id === id)} /></CountryMap>).container;
+        return c.querySelector(".mk-chip") as Element;
+    };
+    const partner = chip("toyota-motor--boston-dynamics");
+    expect(partner.getAttribute("aria-label")).toStartWith("Partners with United States: Toyota Motor and Boston Dynamics");
+    expect(partner.querySelector(".mk-chip-dir")?.getAttribute("class")).toContain("is-both");
+    expect(chip("jare--lynas").getAttribute("aria-label")).toStartWith("Invests in Australia");
+    expect(chip("hyundai-mobis--boston-dynamics").getAttribute("aria-label")).toStartWith("Supplies to United States");
 });
 
 test("arc geometry: clip at the frame and drop floating runs", () => {
@@ -179,7 +234,7 @@ test("country map: site density shading, coastline, scale bar, cities and placed
     expect(c.querySelector(".mk-scale")?.getAttribute("aria-label")).toMatch(/^Scale: bar is [\d,]+ km$/);
     // The key lists only the segments on this map, with counts.
     const key = [...c.querySelectorAll(".mk-keyrow .mk-key li")].map((li) => li.textContent);
-    expect(key.some((t) => t?.startsWith("Rare earths"))).toBe(false);
+    expect(key).toContain(`Rare earths${here.filter((p) => p.segment === "ree-mining-refining").length}`);
     expect(key).toContain(`Gears & bearings${here.filter((p) => p.segment === "gears-screws-bearings").length}`);
     // Labels are decorative and never overlap.
     const layer = c.querySelector(".mk-labels");
@@ -247,7 +302,9 @@ test("Sankey: hover lights a node's upstream and downstream paths only", () => {
     const p = flowPath(LINKS, "oxide");
     expect([...p.nodes].sort()).toEqual(["magnet", "motor", "ore", "oxide"]);
     expect(p.links.has("other->motor")).toBe(false);
-    const c = render(<ValueSankey label="Chain" nodes={NODES} links={LINKS} />).container;
+    const hovered: (string | null)[] = [];
+    const r = render(<ValueSankey label="Chain" nodes={NODES} links={LINKS} onHoverNode={(id) => hovered.push(id)} />);
+    const c = r.container;
     const hit = c.querySelector('.fk-node-hit[aria-label^="Oxide"]') as Element;
     act(() => { fireEvent.pointerEnter(hit); });
     expect(c.querySelector(".fk-sankey")?.classList.contains("has-focus")).toBe(true);
@@ -255,6 +312,13 @@ test("Sankey: hover lights a node's upstream and downstream paths only", () => {
     expect(c.querySelector(".fk-readout-name")?.textContent).toBe("Oxide");
     act(() => { fireEvent.pointerLeave(hit); });
     expect(c.querySelector(".fk-sankey")?.classList.contains("has-focus")).toBe(false);
+    act(() => { fireEvent.focus(hit); });
+    act(() => { fireEvent.blur(hit); });
+    expect(hovered).toEqual(["oxide", null, "oxide", null]);
+    // Unmounting mid-hover clears the linked view.
+    act(() => { fireEvent.pointerEnter(hit); });
+    r.unmount();
+    expect(hovered).toEqual(["oxide", null, "oxide", null, "oxide", null]);
 });
 
 test("Sankey: click selects through onSelectNode; layout turns vertical when asked", () => {
@@ -292,6 +356,8 @@ test("SupplyGraph layers suppliers before buyers; badges and step chips render",
     const step = c.querySelector(".fk-step");
     expect(step?.getAttribute("href")).toBe("/manufacturing#step=strip-casting");
     expect(step?.textContent).toBe("Strip casting");
+    // A precision step links into its own chain.
+    expect(stepHref("roller-thread-grinding")).toBe("/manufacturing?chain=precision#step=roller-thread-grinding");
     act(() => { fireEvent.focus(c.querySelector(".fk-card-main") as Element); });
     expect(c.querySelector(".fk-graph")?.classList.contains("has-focus")).toBe(true);
 });

@@ -65,7 +65,11 @@ function scaleFor(unit: string | undefined, max: number): Scale {
 function plain(unit: string | undefined, n: number): string {
     if (unit === "year") return String(Math.round(n));
     if (unit === "HHI") return Math.round(n).toLocaleString("en-US");
-    if (unit === "fraction") return `${Math.round(n * 100)}`;
+    // Below 1% a whole percent would read as zero, so keep one decimal.
+    if (unit === "fraction")
+        return n !== 0 && Math.abs(n) < 0.01
+            ? `${Number((n * 100).toFixed(1))}`
+            : `${Math.round(n * 100)}`;
     return trim(n);
 }
 
@@ -107,6 +111,17 @@ export function sourcedText(s: Sourced<number>): string {
 
 export function percent(share: number): string {
     return `${Math.round(share * 100)}%`;
+}
+
+// A share with the same marks as sourcedText: "~" for an estimate,
+// "(model)" for a model, bare when reported.
+export function sharePercent(
+    share: number,
+    confidence?: Sourced<unknown>["confidence"],
+): string {
+    if (confidence === "estimated") return `~${percent(share)}`;
+    if (confidence === "modeled") return `${percent(share)} (model)`;
+    return percent(share);
 }
 
 // "4.2%": a share with a fixed number of decimals, trailing zeros dropped.

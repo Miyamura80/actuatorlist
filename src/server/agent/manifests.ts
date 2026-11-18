@@ -1,3 +1,4 @@
+import { LIVE_COUNTRY_PAGES } from "@/supply-chain/country-pages";
 import {
     CODE_LICENSE,
     DATA_LICENSE,
@@ -6,8 +7,15 @@ import {
     REPO_URL,
     absoluteUrl,
 } from "../site";
-import { MCP_TOOLS, PATHS, RATE_LIMIT_PER_MINUTE, REST_ENDPOINTS } from "./links";
-import { bullets, mdTable } from "./md";
+import {
+    DATA_SURFACES,
+    MCP_TOOLS,
+    PATHS,
+    RATE_LIMIT_PER_MINUTE,
+    REST_ENDPOINTS,
+    countryDataAccess,
+} from "./links";
+import { bullets, mdLink, mdTable } from "./md";
 import { catalogStats } from "./pages-md";
 
 // Standalone agent documents: agents.md, auth.md and pricing.md.
@@ -21,6 +29,23 @@ function endpointTable(): string {
     );
 }
 
+function dataSurfaceTable(): string {
+    const countries = LIVE_COUNTRY_PAGES.map((p) => ({
+        label: `${p.name} supply chain`,
+        page: p.path,
+        ...countryDataAccess(p.code),
+    }));
+    return mdTable(
+        ["Page", "Markdown", "MCP", "REST"],
+        [...DATA_SURFACES, ...countries].map((s) => [
+            mdLink(s.label, u(s.page)),
+            u(`${s.page}.md`),
+            s.mcp,
+            `\`${s.rest}\``,
+        ]),
+    );
+}
+
 export function whenToUse(): string[] {
     return [
         "Pick an actuator for a quadruped leg, humanoid joint or robot arm given a torque, weight or budget target (filter by use_case, min_peak_torque_nm, max_weight_g, max_price_usd).",
@@ -28,6 +53,10 @@ export function whenToUse(): string[] {
         "Compare two or more specific actuators side by side (peak and rated torque, gear ratio, weight, voltage, bus, encoder, price).",
         "Find which motors a real robot uses in each joint, or which robots use a given actuator.",
         "Look up one actuator's datasheet-level specs with source links before recommending it.",
+        "See how actuator prices, humanoid market share, roller screw cost, AI prices and humanoid battery runtime have moved over time (/trends, MCP get_trends), with every point dated and cited.",
+        "Check how one actuator's list price has moved, with the page, method and FX rate behind every point (/prices, MCP get_price_history, REST /api/v1/prices/{actuatorId}).",
+        "See who files patents in an actuator technology and where, deduplicated by patent family (/patents, MCP get_patent_landscape, REST /api/v1/patents/{technology}).",
+        "Pick an open-source robot to build from (/open-source, MCP list_open_robots): how open its CAD, BOM, firmware and sim really are, its licence, cost and the actuators in its joints.",
     ];
 }
 
@@ -53,6 +82,7 @@ export function agentsBody(): string {
             `Docs server: ${u(PATHS.mcpDocs)} answers questions about the site and API over MCP.`,
         ])}`,
         `## REST API\n\nBase URL ${u("/api/v1")}. JSON responses, anonymous access, OpenAPI description at ${u(PATHS.openapi)}, human reference at ${u(PATHS.apiDocs)}.\n\n${endpointTable()}`,
+        `## Supply chain and market data\n\nEach page has a markdown twin and the same data over MCP and REST. Companies, plants and supply links behind the atlas: MCP list_companies, get_company and list_sites, REST \`/api/v1/companies\` and \`/api/v1/sites\`.\n\n${dataSurfaceTable()}`,
         `## Markdown and discovery\n\n${bullets([
             `Index: ${u(PATHS.llms)}; full catalog in one file: ${u(PATHS.llmsFull)}`,
             `Every page has a markdown twin: append .md (for example ${u("/index.md")}) or send Accept: text/markdown.`,

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { get } from "./agent-helpers";
+import { get, isOwnedPath } from "./agent-helpers";
 
 test("static and fallback public headers expose native mobile navigation and active page", async () => {
     for (const path of [
@@ -9,6 +9,7 @@ test("static and fallback public headers expose native mobile navigation and act
         "/agents",
         "/faq",
         "/guides",
+        "/patents",
         "/about",
     ]) {
         const html = await (await get(path)).text();
@@ -17,9 +18,10 @@ test("static and fallback public headers expose native mobile navigation and act
         expect(html).toContain(
             '<summary aria-label="Menu" aria-controls="public-navigation"><svg',
         );
-        if (path !== "/about")
+        // Pages linked from the header (or its dropdowns) mark themselves current.
+        if (["/", "/robots", "/actuators", "/patents"].includes(path))
             expect(html).toContain(`href="${path}" aria-current="page"`);
-        expect(html).toContain('class="alpha-tag">alpha');
+        expect(html).toContain('class="site-stage">beta');
     }
 });
 
@@ -49,13 +51,20 @@ test("public pages have one grouped footer with valid internal links", async () 
             ...html.matchAll(/<footer class="site-footer"[^>]*>([\s\S]*?)<\/footer>/g),
         ];
         expect(footers).toHaveLength(1);
-        for (const group of ["Catalog", "Resources", "Project"])
-            expect(footers[0]?.[1]).toContain(group);
         const footer = footers[0]?.[1];
         if (!footer) throw new Error(`Missing footer: ${path}`);
+        for (const group of ["Catalog", "Agents", "Project"])
+            expect(footer).toContain(`<h2>${group}</h2>`);
+        expect(footer).toContain(
+            '<details class="site-footer-more"><summary>All pages</summary>',
+        );
+        for (const href of ["/llms.txt", "/mcp", "/docs/api", "/agents.md"])
+            expect(footer).toContain(`href="${href}"`);
         for (const match of footer.matchAll(/href="(\/[^"#]*)"/g)) {
             const href = match[1];
             if (!href) throw new Error("Missing footer href");
+            // /mcp answers POST only; its own tests cover it.
+            if (!isOwnedPath(href)) continue;
             expect((await get(href)).status).toBe(200);
         }
     }

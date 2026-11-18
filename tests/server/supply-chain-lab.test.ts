@@ -48,12 +48,12 @@ test("the lab HTML carries a server-rendered world map before hydration", async 
     // what it holds.
     expect(svg).toContain("<title>China</title>");
     expect(svg).toMatch(
-        /<title>[^<]*\d+ magnet and motor sites[^<]*JL MAG Rare-Earth · Ganzhou headquarters and magnet plant[^<]*<\/title>/,
+        /<title>[^<]*\d+ magnet and motor sites?[^<]*JL MAG Rare-Earth · Ganzhou headquarters and magnet plant[^<]*<\/title>/,
     );
     expect(svg).toContain(`<path d="${SEGMENT_PICTO["magnets-motors"].line}"/>`);
     // A city-centre pin is a dashed (hollow) tile.
     expect(svg).toMatch(
-        /<title>Shenghe Resources[^<]*<\/title><rect [^>]*stroke-dasharray=/,
+        /<title>IREL \(India\)[^<]*<\/title><rect [^>]*stroke-dasharray=/,
     );
     const tiles = (svg?.match(/<rect x="1" y="1" width="22" height="22" rx="5"/g) ?? [])
         .length;
@@ -71,7 +71,8 @@ test("the lab twin has the map and flow kits as tables", async () => {
     expect(md).toContain(
         "| Ningbo Tuopu Group (CN) | Tesla (US) | Optimus actuator assemblies | estimated |",
     );
-    expect(md).not.toContain("Shenghe Resources (CN) |");
+    // The ended MP Materials offtake is history, not a current flow.
+    expect(md).not.toContain("| MP Materials (US) | Shenghe Resources (CN) |");
     expect(md).toContain("## Flow kit");
     expect(md).toContain("| Actuators | Berkeley Humanoid Lite | $3,616 |");
 });

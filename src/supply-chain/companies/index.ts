@@ -1,47 +1,19 @@
-import type { CountryCode } from "../countries";
-import type { SourceId, Sourced } from "../sourced";
-import type { Stage } from "../stages";
+import { ALT_COMPANIES } from "./alts";
+import { BOM_COMPANIES, BOM_MARGINS } from "./bom";
+import { CHINA_COMPANIES, UNITREE_REVENUE } from "./china";
+import { JAPAN_COMPANIES, grossMargin, yenRevenue } from "./japan";
+import { KOREA_COMPANIES } from "./korea";
+import { LEGGED_COMPANIES } from "./legged";
+import { PRECISION_COMPANIES } from "./precision";
+import type { Company } from "./types";
+import { TIMKEN_REVENUE, US_COMPANIES } from "./us";
 
 // Companies along the actuator supply chain, ore to robot. Seed set: enough
 // to exercise the shared kits across four segments and four countries; the
-// page datasets (metals, BOM, country pages) grow it.
+// page datasets (metals, BOM, country pages) grow it. Types live in ./types
+// so per-country files (./japan) can share them.
 
-export const SEGMENTS = [
-    "ree-mining-refining",
-    "magnets-motors",
-    "gears-screws-bearings",
-    "robot-actuator-oem",
-] as const;
-export type Segment = (typeof SEGMENTS)[number];
-
-export const SEGMENT_LABEL: Record<Segment, string> = {
-    "ree-mining-refining": "Rare earth mining & refining",
-    "magnets-motors": "Magnets & motors",
-    "gears-screws-bearings": "Gears, screws & bearings",
-    "robot-actuator-oem": "Robot & actuator makers",
-};
-
-export interface Company {
-    id: string;
-    name: string;
-    localName?: string;
-    hqCountry: CountryCode;
-    stages: Stage[];
-    segment: Segment;
-    ownership?: {
-        kind: "listed" | "private" | "state" | "subsidiary";
-        ticker?: string;
-        parent?: string;
-    };
-    // USD, latest fiscal year
-    revenue?: Sourced<number>;
-    // fraction 0..1
-    grossMargin?: Sourced<number>;
-    products?: string[];
-    url: string;
-    // Citations for profile facts (ownership, products, headquarters).
-    sources?: SourceId[];
-}
+export { SEGMENTS, SEGMENT_LABEL, type Company, type Segment } from "./types";
 
 export const COMPANIES: Company[] = [
     // Rare earth mining and refining
@@ -85,6 +57,7 @@ export const COMPANIES: Company[] = [
             note: "Converted from CNY 42.563 bn operating revenue at roughly 7.1 to 7.3 CNY per USD.",
         },
         products: ["Rare earth oxides", "Rare earth metals", "Magnetic materials"],
+        grossMargin: BOM_MARGINS.northern,
         url: "https://www.reht.com/",
     },
     {
@@ -118,6 +91,9 @@ export const COMPANIES: Company[] = [
         stages: ["separation", "metal-alloy", "magnet"],
         segment: "magnets-motors",
         ownership: { kind: "listed", ticker: "TYO: 4063" },
+        revenue: yenRevenue(2573969, "year to March 2026", "2026-03", [
+            "envalith-shinetsu",
+        ]),
         products: ["Sintered NdFeB magnets", "Rare earth smelting"],
         url: "https://www.shinetsu.co.jp/en/",
     },
@@ -130,6 +106,7 @@ export const COMPANIES: Company[] = [
         segment: "magnets-motors",
         ownership: { kind: "listed", ticker: "SZSE: 300748; HKEX: 6680" },
         products: ["High-performance NdFeB magnets", "Magnet recycling"],
+        grossMargin: BOM_MARGINS.jlMag,
         url: "https://www.jlmag.com.cn/en/",
     },
     {
@@ -140,8 +117,17 @@ export const COMPANIES: Company[] = [
         stages: ["motor", "gearing"],
         segment: "magnets-motors",
         ownership: { kind: "listed", ticker: "TYO: 6594" },
-        products: ["Precision motors", "Traction motors", "Reducers"],
+        revenue: yenRevenue(2708700, "year to March 2026", "2026-03", [
+            "nidec-results-fy2025",
+        ]),
+        products: [
+            "Precision motors",
+            "Traction motors",
+            "Reducers",
+            "Frameless motors and sensor-embedded strain-wave reducers for humanoid joints",
+        ],
         url: "https://www.nidec.com/en/",
+        sources: ["nidec-physical-ai"],
     },
     // Gears, screws and bearings
     {
@@ -152,15 +138,10 @@ export const COMPANIES: Company[] = [
         stages: ["gearing", "actuator"],
         segment: "gears-screws-bearings",
         ownership: { kind: "listed", ticker: "TYO: 6324" },
-        revenue: {
-            value: 365e6,
-            unit: "USD",
-            range: [355e6, 375e6],
-            sources: ["filingreader-hds-fy2025"],
-            asOf: "2025-03",
-            confidence: "estimated",
-            note: "Converted from JPY 55,645 m net sales (year to March 2025) at roughly 148 to 157 JPY per USD.",
-        },
+        revenue: yenRevenue(59557, "year to March 2026", "2026-03", ["envalith-hds"]),
+        grossMargin: grossMargin(18133, 59557, "year to March 2026", "2026-03", [
+            "envalith-hds",
+        ]),
         products: ["Strain wave gears", "Planetary reducers", "Servo actuators"],
         url: "https://www.hds.co.jp/english/",
     },
@@ -172,6 +153,12 @@ export const COMPANIES: Company[] = [
         stages: ["gearing"],
         segment: "gears-screws-bearings",
         ownership: { kind: "listed", ticker: "TYO: 6268" },
+        revenue: yenRevenue(307912, "year to December 2025", "2025-12", [
+            "envalith-nabtesco",
+        ]),
+        grossMargin: grossMargin(93781, 307912, "year to December 2025", "2025-12", [
+            "envalith-nabtesco",
+        ]),
         products: ["RV precision reduction gears"],
         url: "https://www.nabtesco.com/en/",
         sources: ["nabtesco-site"],
@@ -185,6 +172,7 @@ export const COMPANIES: Company[] = [
         segment: "gears-screws-bearings",
         ownership: { kind: "listed", ticker: "SHA: 688017" },
         products: ["Harmonic reducers", "Mechatronic actuators"],
+        grossMargin: BOM_MARGINS.leaderdrive,
         url: "https://star.sse.com.cn/star/en/marketdata/snapshot/c/5545073.shtml",
     },
     {
@@ -194,6 +182,7 @@ export const COMPANIES: Company[] = [
         stages: ["bearing", "gearing"],
         segment: "gears-screws-bearings",
         ownership: { kind: "listed", ticker: "NYSE: TKR" },
+        revenue: TIMKEN_REVENUE,
         products: ["Tapered roller bearings", "Precision drives"],
         url: "https://www.timken.com/",
     },
@@ -217,6 +206,7 @@ export const COMPANIES: Company[] = [
         ownership: { kind: "subsidiary", parent: "Hyundai Motor Group" },
         products: ["Atlas humanoid", "Spot quadruped", "Stretch"],
         url: "https://bostondynamics.com/",
+        sources: ["bostondynamics-site", "softbank-bd-2021"],
     },
     {
         id: "hyundai-mobis",
@@ -241,9 +231,17 @@ export const COMPANIES: Company[] = [
             ticker: "KOSDAQ: 277810",
             parent: "Samsung Electronics",
         },
-        products: ["Collaborative arms", "Bimanual mobile robots"],
+        products: [
+            "Collaborative arms",
+            "RB-Y1 bimanual mobile manipulator",
+            "RBQ-10 quadruped",
+        ],
         url: "https://www.rainbow-robotics.com/",
-        sources: ["samsung-rainbow-2024"],
+        sources: [
+            "samsung-rainbow-2024",
+            "prn-rainbow-rby1-2024",
+            "prn-rainbow-icra-2024",
+        ],
     },
     {
         id: "fanuc",
@@ -253,6 +251,12 @@ export const COMPANIES: Company[] = [
         stages: ["robot"],
         segment: "robot-actuator-oem",
         ownership: { kind: "listed", ticker: "TYO: 6954" },
+        revenue: yenRevenue(857831, "year to March 2026", "2026-03", [
+            "fanuc-results-fy2025",
+        ]),
+        grossMargin: grossMargin(328466, 857831, "year to March 2026", "2026-03", [
+            "stockanalysis-fanuc",
+        ]),
         products: ["Industrial robots", "CNC systems"],
         url: "https://www.fanuc.co.jp/en/",
     },
@@ -264,6 +268,12 @@ export const COMPANIES: Company[] = [
         stages: ["motor", "robot"],
         segment: "robot-actuator-oem",
         ownership: { kind: "listed", ticker: "TYO: 6506" },
+        revenue: yenRevenue(542122, "year to February 2026", "2026-02", [
+            "yaskawa-results-fy2025",
+        ]),
+        grossMargin: grossMargin(191236, 542122, "year to February 2026", "2026-02", [
+            "envalith-yaskawa",
+        ]),
         products: ["Motoman robots", "Servo motors"],
         url: "https://www.yaskawa-global.com/",
     },
@@ -274,7 +284,9 @@ export const COMPANIES: Company[] = [
         hqCountry: "CN",
         stages: ["motor", "actuator", "robot"],
         segment: "robot-actuator-oem",
+        revenue: UNITREE_REVENUE,
         products: ["Quadrupeds", "Humanoids", "Joint motors"],
+        grossMargin: BOM_MARGINS.unitree,
         url: "https://www.unitree.com/",
     },
     {
@@ -307,6 +319,15 @@ export const COMPANIES: Company[] = [
         segment: "robot-actuator-oem",
         ownership: { kind: "listed", ticker: "SHA: 601689" },
         products: ["Automotive chassis parts", "Robot actuators"],
+        grossMargin: BOM_MARGINS.tuopu,
         url: "https://www.tuopu.com/",
     },
+    ...JAPAN_COMPANIES,
+    ...KOREA_COMPANIES,
+    ...ALT_COMPANIES,
+    ...CHINA_COMPANIES,
+    ...BOM_COMPANIES,
+    ...PRECISION_COMPANIES,
+    ...US_COMPANIES,
+    ...LEGGED_COMPANIES,
 ];

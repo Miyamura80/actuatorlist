@@ -1,7 +1,11 @@
 import { useEffect, useRef } from "react";
-import { PUBLIC_LINKS } from "../../../src/public-navigation";
+import { PUBLIC_LINKS, SEARCH_LINK, headerMenus } from "../../../src/public-navigation";
+import { CODE_LICENSE } from "../../../src/repo-link";
 import { BrandMark } from "./BrandMark";
-import { SupplyChainMenu } from "./supply-chain/SupplyChainMenu";
+import { GitHubMark, GitHubStar } from "./GitHubMark";
+import { HeaderIcon } from "./nav/HeaderIcon";
+import { HeaderMenu } from "./nav/HeaderMenu";
+import { openCommandPalette } from "../lib/command-palette";
 
 export function PublicHeader({ path, initialOpen = false, supplyChainPreview = false }: { path: string; initialOpen?: boolean; supplyChainPreview?: boolean }) {
     const ref = useRef<HTMLDetailsElement>(null);
@@ -19,7 +23,16 @@ export function PublicHeader({ path, initialOpen = false, supplyChainPreview = f
     return <header className="site-header">
         <a href="/" className="site-brand" aria-label="actuatorlist home">
             <BrandMark size={24} />
-            <span><b>actuator</b>list.com</span><span className="alpha-tag">alpha</span>
+            <span><b>actuator</b>list.com</span><span className="site-stage">beta</span>
+        </a>
+        <a href={CODE_LICENSE.href} className="open-source-link"><GitHubMark /><GitHubStar />{CODE_LICENSE.label}</a>
+        <a href={SEARCH_LINK.href} className="site-search" aria-label={SEARCH_LINK.label} title={SEARCH_LINK.title}
+            onClick={(event) => {
+                // Modified or middle clicks keep normal link behaviour (new tab, new window).
+                if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (openCommandPalette()) event.preventDefault();
+            }}>
+            <HeaderIcon item="search" />
         </a>
         <details className="site-menu" open={initialOpen} ref={ref} onKeyDown={(event) => {
             if (event.key === "Escape" && event.currentTarget.open) {
@@ -32,9 +45,9 @@ export function PublicHeader({ path, initialOpen = false, supplyChainPreview = f
                 {PUBLIC_LINKS.map(([href, label]) => <a key={href} href={href}
                     aria-current={path === href ? "page" : undefined}
                     onClick={() => { if (ref.current) ref.current.open = false; }}>
-                    {label}
+                    <HeaderIcon item={href} />{label}
                 </a>)}
-                <SupplyChainMenu path={path} preview={supplyChainPreview} onNavigate={() => { if (ref.current) ref.current.open = false; }} />
+                {headerMenus(supplyChainPreview).map((menu) => <HeaderMenu key={menu.id} menu={menu} path={path} onNavigate={() => { if (ref.current) ref.current.open = false; }} />)}
             </nav>
         </details>
     </header>;

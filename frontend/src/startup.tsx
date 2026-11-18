@@ -1,4 +1,4 @@
-import { StrictMode, useLayoutEffect } from "react";
+import { StrictMode, Suspense, lazy, useLayoutEffect } from "react";
 import { createRoot, hydrateRoot, type Root as ReactRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { usePath } from "./lib/router";
@@ -23,11 +23,100 @@ import { LAB_PATH } from "../../src/supply-chain/lab-fixtures";
 import { Humanoids } from "./pages/humanoids/Humanoids";
 import { HUMANOIDS_PATH } from "../../src/humanoids";
 import { Contributors } from "./pages/Contributors";
-import { CONTRIBUTORS_PATH } from "../../src/people";
+import { CONTRIBUTORS_PATH, PEOPLE_PATH } from "../../src/people";
 import { Metals } from "./pages/supply-chain/metals/Metals";
 import { METALS_PATH } from "../../src/supply-chain/metals";
 import { Policy } from "./pages/supply-chain/policy/Policy";
 import { POLICY_PATH } from "../../src/supply-chain/policy";
+import { OpenSource } from "./pages/open-source/OpenSource";
+import { Trends } from "./pages/trends/Trends";
+import { TRENDS_PATH } from "../../src/trends";
+import { Prices } from "./pages/prices/Prices";
+import { PRICES_PATH } from "../../src/prices";
+import { PATENTS_PATH } from "../../src/patents/path";
+import { OPEN_SOURCE_PATH } from "../../src/open-source";
+import { Benchmarks } from "./pages/benchmarks/Benchmarks";
+import { BENCHMARKS_PATH } from "../../src/benchmarks";
+import { MANUFACTURING_PATH } from "../../src/supply-chain/processes/path";
+import { ALTS_PATH } from "../../src/supply-chain/alts/path";
+import { BOM_PATH } from "../../src/supply-chain/bom/path";
+import { PublicHeader } from "./components/PublicHeader";
+
+// The process map carries its 3D vignette specs, so it loads in its own chunk.
+const Manufacturing = lazy(() =>
+    import("./pages/supply-chain/manufacturing/Manufacturing").then((m) => ({ default: m.Manufacturing })),
+);
+
+// /alts carries its 3D scene specs too.
+const Alts = lazy(() => import("./pages/supply-chain/alts/Alts").then((m) => ({ default: m.Alts })));
+
+// /bom carries the three teardowns and their 3D scene specs.
+const Bom = lazy(() => import("./pages/supply-chain/bom/Bom").then((m) => ({ default: m.Bom })));
+
+function BomLoading({ menuOpen }: { menuOpen: boolean }) {
+    return <div className="tool-page bm-page">
+        <PublicHeader path={BOM_PATH} initialOpen={menuOpen} />
+        <main className="tool-main" aria-busy="true">
+            <p role="status">Loading bill of materials</p>
+        </main>
+    </div>;
+}
+
+function AltsLoading({ menuOpen }: { menuOpen: boolean }) {
+    return <div className="tool-page al-page">
+        <PublicHeader path={ALTS_PATH} initialOpen={menuOpen} />
+        <main className="tool-main" aria-busy="true">
+            <p role="status">Loading alternatives</p>
+        </main>
+    </div>;
+}
+
+// While the chunk loads, keep the site header and the page frame on screen.
+function ManufacturingLoading({ menuOpen }: { menuOpen: boolean }) {
+    return <div className="tool-page mf-page">
+        <PublicHeader path={MANUFACTURING_PATH} initialOpen={menuOpen} />
+        <main className="tool-main" aria-busy="true" />
+    </div>;
+}
+import { CountryPage } from "./pages/supply-chain/country/CountryPage";
+import { LIVE_COUNTRY_PAGES } from "../../src/supply-chain/country-pages";
+import { SDK_PATH } from "../../src/sdk";
+
+// /sdk carries its evidence dataset (several hundred KB), so it loads in its
+// own chunk too.
+const Sdk = lazy(() => import("./pages/sdk/Sdk").then((m) => ({ default: m.Sdk })));
+
+function SdkLoading({ menuOpen }: { menuOpen: boolean }) {
+    return <div className="tool-page sdk-page">
+        <PublicHeader path={SDK_PATH} initialOpen={menuOpen} />
+        <main className="tool-main" aria-busy="true">
+            <p role="status">Loading SDK scores</p>
+        </main>
+    </div>;
+}
+
+// /people carries the directory, its network layout and the map, so it
+// loads in its own chunk.
+const Patents = lazy(() => import("./pages/patents/Patents").then((m) => ({ default: m.Patents })));
+const People = lazy(() => import("./pages/people/People").then((m) => ({ default: m.People })));
+
+function PeopleLoading({ menuOpen }: { menuOpen: boolean }) {
+    return <div className="tool-page pp-page">
+        <PublicHeader path={PEOPLE_PATH} initialOpen={menuOpen} />
+        <main className="tool-main" aria-busy="true">
+            <p role="status">Loading people</p>
+        </main>
+    </div>;
+}
+
+function PatentsLoading({ menuOpen }: { menuOpen: boolean }) {
+    return <div className="tool-page">
+        <PublicHeader path={PATENTS_PATH} initialOpen={menuOpen} />
+        <main className="tool-main" aria-busy="true">
+            <p role="status">Loading patents</p>
+        </main>
+    </div>;
+}
 
 function Page({ menuOpen }: { menuOpen: boolean }) {
     const path = usePath();
@@ -43,8 +132,20 @@ function Page({ menuOpen }: { menuOpen: boolean }) {
     if (path === LAB_PATH) return <SupplyChainLab menuOpen={menuOpen} />;
     if (path === HUMANOIDS_PATH) return <Humanoids menuOpen={menuOpen} />;
     if (path === CONTRIBUTORS_PATH) return <Contributors menuOpen={menuOpen} />;
+    if (path === PEOPLE_PATH) return <Suspense fallback={<PeopleLoading menuOpen={menuOpen} />}><People menuOpen={menuOpen} /></Suspense>;
     if (path === METALS_PATH) return <Metals menuOpen={menuOpen} />;
     if (path === POLICY_PATH) return <Policy menuOpen={menuOpen} />;
+    if (path === OPEN_SOURCE_PATH) return <OpenSource menuOpen={menuOpen} />;
+    if (path === TRENDS_PATH) return <Trends menuOpen={menuOpen} />;
+    if (path === PRICES_PATH) return <Prices menuOpen={menuOpen} />;
+    if (path === PATENTS_PATH) return <Suspense fallback={<PatentsLoading menuOpen={menuOpen} />}><Patents menuOpen={menuOpen} /></Suspense>;
+    if (path === BENCHMARKS_PATH) return <Benchmarks menuOpen={menuOpen} />;
+    if (path === MANUFACTURING_PATH) return <Suspense fallback={<ManufacturingLoading menuOpen={menuOpen} />}><Manufacturing menuOpen={menuOpen} /></Suspense>;
+    if (path === BOM_PATH || path.startsWith(`${BOM_PATH}/`)) return <Suspense fallback={<BomLoading menuOpen={menuOpen} />}><Bom menuOpen={menuOpen} /></Suspense>;
+    if (path === ALTS_PATH) return <Suspense fallback={<AltsLoading menuOpen={menuOpen} />}><Alts menuOpen={menuOpen} /></Suspense>;
+    const country = LIVE_COUNTRY_PAGES.find((p) => p.path === path);
+    if (country) return <CountryPage page={country} menuOpen={menuOpen} />;
+    if (path === SDK_PATH) return <Suspense fallback={<SdkLoading menuOpen={menuOpen} />}><Sdk menuOpen={menuOpen} /></Suspense>;
     if (path.startsWith("/actuators/")) {
         const raw = path.slice("/actuators/".length);
         let id = raw;

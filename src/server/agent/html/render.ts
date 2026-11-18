@@ -5,6 +5,7 @@ import { DIST_DIR } from "../../static";
 import { graph } from "../jsonld";
 import { type Page, markdownPath } from "../pages";
 import {
+    FOLD_SCRIPT,
     foldLimits,
     foldQuestions,
     foldWorkedExamples,
@@ -66,6 +67,35 @@ function withPicture(page: Page, html: string): string {
     return picture ? html.replace("</h1>", `</h1>${picture}`) : html;
 }
 
+// The visible section after #root: the page's Markdown from `persistentFrom`
+// on, with folds, icons and cards, then the footer.
+function persistentSection(page: Page, content: string): string {
+    if (!content) return "";
+    const rendered = withToolCards(
+        foldLimits(
+            withSectionIcons(
+                foldQuestions(
+                    foldWorkedExamples(
+                        page.headingIds
+                            ? withHeadingIds(markdownToHtml(content))
+                            : markdownToHtml(content),
+                    ),
+                ),
+            ),
+        ),
+    );
+    const html = page.persistentHtml ? page.persistentHtml(rendered) : rendered;
+    // Folded sections open when a link or the URL hash points inside them.
+    const foldScript = html.includes('class="ga-fold')
+        ? `<script>${FOLD_SCRIPT}</script>`
+        : "";
+    const label =
+        page.ogType === "product"
+            ? "Specifications and catalog details"
+            : (page.persistentLabel ?? "Catalog details");
+    return `<section class="ga-page" id="catalog-content" tabindex="-1" aria-label="${esc(label)}"><div class="ga-main">${html}</div></section>${foldScript}${publicFooter()}`;
+}
+
 // React owns #root: only the built gallery is hydrated; other fallbacks mount.
 // Catalog facts and homepage FAQ live in visible siblings, rendered from the
 // same markdown as the agent twins (FAQ answers also supply JSON-LD). React's
@@ -94,25 +124,7 @@ export async function renderSpaPage(
             ? await galleryFile.text()
             : null;
     const prerender = galleryHtml ?? visual ?? fallbackHtml;
-    const rendered = withToolCards(
-        foldLimits(
-            withSectionIcons(
-                foldQuestions(
-                    foldWorkedExamples(
-                        page.headingIds
-                            ? withHeadingIds(markdownToHtml(content))
-                            : markdownToHtml(content),
-                    ),
-                ),
-            ),
-        ),
-    );
-    const persistentHtml = page.persistentHtml
-        ? page.persistentHtml(rendered)
-        : rendered;
-    const persistent = content
-        ? `<section class="ga-page" id="catalog-content" ${page.ogType === "product" ? 'tabindex="-1" aria-label="Specifications and catalog details"' : `tabindex="-1" aria-label="${esc(page.persistentLabel ?? "Catalog details")}"`}><div class="ga-main">${persistentHtml}</div></section>${publicFooter()}`
-        : "";
+    const persistent = persistentSection(page, content);
     const rewriter = new HTMLRewriter()
         .on("html", {
             element: (el) => {

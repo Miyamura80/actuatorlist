@@ -1,14 +1,25 @@
-import { ACTUATORS, type Actuator, CATEGORIES, type Robot } from "@/catalog";
+import {
+    ACTUATORS,
+    type Actuator,
+    CATEGORIES,
+    ROBOT_KINDS,
+    type Robot,
+    type RobotKind,
+} from "@/catalog";
 import { evidenceFor, fieldCaveat } from "@/catalog/evidence";
-import { resolveJoints, robotsUsingActuator } from "@/catalog/query";
+import { jointRows, robotsUsingActuator } from "@/catalog/query";
+import { humanoidLinks, patentLinks } from "@/related/actuator";
 import { absoluteUrl } from "../site";
+import { measuredSection } from "./benchmarks/markdown";
 import { catalogComparisonLinks } from "./comparison-links";
 import { engineeringEvidenceSection } from "./engineering-evidence";
 import { bullets, humanize, mdLink, mdTable, mdText, num, usd } from "./md";
 import {
     engineeringNotes,
     engineeringSources,
+    productSelectionNotes,
     productSummary,
+    rs01RatedPoint,
 } from "./product-content";
 import { sizeAJointSection } from "./size-a-joint";
 
@@ -95,7 +106,23 @@ function specRows(a: Actuator): string[][] {
         };
         const field = fields[k];
         const caveat = field ? fieldCaveat(a, field) : undefined;
-        return [k, mdText(`${v}${caveat ? `: ${caveat}` : ""}`)];
+        let selectionCaveat: string | undefined;
+        if (a.id === "robstride-01" && k === "Rated torque") {
+            selectionCaveat = `at ${rs01RatedPoint.rpm} rpm with a ${rs01RatedPoint.cooling}. See Selection notes for the separate 7 N·m rating.`;
+        }
+        if (
+            a.id === "cubemars-ak70-10" &&
+            ["Weight", "Backlash", "Torque density", "Integrated driver"].includes(k)
+        ) {
+            selectionCaveat =
+                "catalog value. Confirm shipped configuration (see Selection notes).";
+        }
+        return [
+            k,
+            mdText(
+                `${v}${caveat ? `: ${caveat}` : ""}${selectionCaveat ? `: ${selectionCaveat}` : ""}`,
+            ),
+        ];
     });
 }
 
@@ -117,14 +144,25 @@ export function actuatorBody(a: Actuator): string {
         `## Specifications\n\n${mdTable(["Spec", "Value"], specRows(a))}${a.id === "cubemars-ak80-9" ? "\n\n**Legacy catalog / revision conflict:** retained catalog fields are not revalidated by this editorial review. Catalog mass is 485 g and motor-side encoder is 14-bit; the [reviewed V3.0 KV100 model page](https://www.cubemars.com/product/ak80-9-v3-0-robotic-actuator.html) lists 490 g and 16-bit inner sensing, while the [AK family manual V3.2.0](https://www.cubemars.com/data/cms/202602/ak-series-prodcut-manual-v3-2-0-for-ak-3-0-robotic-actuator.pdf) lists 21-bit. Confirm the installed revision before using these values or derived torque density; the documentation discrepancy is unresolved." : ""}`,
         `## Use cases\n\n${bullets(a.use_cases.map(humanize))}`,
     ];
+    const selection = productSelectionNotes[a.id];
     const sizing = sizeAJointSection(a);
     if (sizing) sections.splice(3, 0, sizing);
+    if (selection) sections.splice(3, 0, `## Selection notes\n\n${selection}`);
     if (robots.length > 0) {
         sections.push(
             `## Robots that use it\n\n${bullets(robots.map((r) => `${mdLink(r.name, absoluteUrl(`/robots#${encodeURIComponent(r.id)}`))} by ${mdText(r.brand)}: ${mdText(r.summary)}`))}`,
         );
     }
-    if (a.notes && !productSummary(a.id))
+    const inHumanoids = humanoidLinks(a.id);
+    if (inHumanoids.length > 0) {
+        sections.push(
+            `## In humanoids\n\n${bullets(inHumanoids.map((l) => `${mdLink(l.label, absoluteUrl(l.href))}: ${mdText(l.detail ?? "")}`))}`,
+        );
+    }
+    sections.push(
+        `## Patent landscape\n\nPatent families since 2010 for this design:\n\n${bullets(patentLinks(a.category).map((l) => mdLink(l.label, absoluteUrl(l.href))))}`,
+    );
+    if (a.notes && !productSummary(a.id) && !selection)
         sections.push(`## Notes\n\n${mdText(a.notes)}`);
     const engineering = engineeringNotes(a.id);
     if (engineering) sections.push(engineering);
@@ -133,6 +171,8 @@ export function actuatorBody(a: Actuator): string {
             "## Engineering comparison\n\nRead the [AK80-9 V3.0 KV100 versus original CyberGear comparison](/comparisons/cubemars-ak80-9-vs-xiaomi-cybergear) for source-qualified efficiency, thermal duty, precision and modeling boundaries. Hardware/firmware identity and unresolved document conflicts matter; this is not a matched bench test. See the [selection guide](/guides/robot-actuator-selection) for a proposed validation protocol.",
         );
     }
+    const measured = measuredSection(a);
+    if (measured) sections.push(measured);
     const researchedEvidence = engineeringEvidenceSection(a.id);
     if (researchedEvidence) sections.push(researchedEvidence);
     const sources = [
@@ -219,38 +259,75 @@ function researchFacts(r: Robot): string[] {
     );
 }
 
+export const ROBOT_KIND_LABEL: Record<RobotKind, string> = {
+    humanoid: "Humanoid",
+    robot_arm: "Robot arm",
+    quadruped: "Quadruped",
+};
+
+const KIND_PLURAL: Record<RobotKind, string> = {
+    humanoid: "humanoids",
+    robot_arm: "robot arms",
+    quadruped: "quadrupeds",
+};
+
+// "12 humanoids, 10 robot arms and 10 quadrupeds", in ROBOT_KINDS order.
+export function robotKindCounts(robots: readonly Robot[]): string {
+    const parts = ROBOT_KINDS.map(
+        (k) => [k, robots.filter((r) => r.kind === k).length] as const,
+    )
+        .filter(([, n]) => n > 0)
+        .map(([k, n]) => `${n} ${KIND_PLURAL[k]}`);
+    return parts.length > 1
+        ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`
+        : (parts[0] ?? "no robots");
+}
+
+// The size line differs by body plan: height for humanoids, top speed for
+// quadrupeds, reach for arms.
+function sizeFacts(r: Robot): string[] {
+    if (r.kind === "humanoid")
+        return [
+            `Height: ${num(r.height_m, "m", 2)}`,
+            ...(r.reach_mm != null ? [`Arm reach: ${num(r.reach_mm, "mm", 0)}`] : []),
+        ];
+    if (r.kind === "quadruped") return [`Top speed: ${num(r.top_speed_mps, "m/s", 1)}`];
+    return [`Reach: ${num(r.reach_mm, "mm", 0)}`];
+}
+
+function motorCell(j: ReturnType<typeof jointRows>[number]): string {
+    if (!j.motor) return "not named by its sources";
+    const label = `${j.motor.brand} ${j.motor.name}`;
+    return j.motor.actuator_id
+        ? mdLink(label, absoluteUrl(actuatorPath(j.motor.actuator_id)))
+        : mdText(label);
+}
+
 export function robotSection(r: Robot, level = 2): string {
     const h = "#".repeat(level);
     const facts = [
         `Brand: ${mdText(r.brand)}${r.country ? ` (${mdText(r.country)})` : ""}`,
-        ...(r.kind === "humanoid" ? ["Type: Humanoid"] : []),
+        `Type: ${ROBOT_KIND_LABEL[r.kind]}`,
         `Degrees of freedom: ${num(r.dof)}`,
         `Payload: ${num(r.payload_kg, "kg")}${r.payload_basis === "whole_body" ? " (whole body)" : ""}`,
-        r.kind === "humanoid"
-            ? `Height: ${num(r.height_m, "m", 2)}`
-            : `Reach: ${num(r.reach_mm, "mm", 0)}`,
-        ...(r.kind === "humanoid" && r.reach_mm != null
-            ? [`Arm reach: ${num(r.reach_mm, "mm", 0)}`]
-            : []),
+        ...sizeFacts(r),
         `Weight: ${num(r.weight_kg, "kg", 2)}`,
         `Price: ${usd(r.price_usd)}${r.price_max_usd ? ` to ${usd(r.price_max_usd)}` : ""}`,
         ...researchFacts(r),
+        ...(r.notes ? [`Notes: ${mdText(r.notes)}`] : []),
     ];
-    const joints = resolveJoints(r).map((j) => [
+    const joints = jointRows(r).map((j) => [
         mdText(j.role),
         String(j.count),
-        j.motor.actuator_id
-            ? mdLink(
-                  `${j.motor.brand} ${j.motor.name}`,
-                  absoluteUrl(actuatorPath(j.motor.actuator_id)),
-              )
-            : mdText(`${j.motor.brand} ${j.motor.name}`),
-        num(j.motor.peak_torque_nm, "Nm"),
+        motorCell(j),
+        num(j.motor?.peak_torque_nm ?? null, "Nm"),
     ]);
     return [
         `${h} ${mdText(r.name)} by ${mdText(r.brand)}`,
         mdText(r.summary),
         bullets(facts),
-        mdTable(["Joint", "Count", "Motor", "Peak torque"], joints),
+        joints.length > 0
+            ? mdTable(["Joint", "Count", "Motor", "Peak torque"], joints)
+            : "Joint layout not published by its sources.",
     ].join("\n\n");
 }

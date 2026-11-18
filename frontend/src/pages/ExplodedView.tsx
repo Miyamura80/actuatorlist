@@ -1,12 +1,16 @@
 import { PublicHeader } from "../components/PublicHeader";
 import { EngineeringEvidencePanel } from "../components/EngineeringEvidencePanel";
+import { MeasuredPanel } from "../components/benchmarks/MeasuredPanel";
 import { evidenceFor, fieldCaveat, isReducerFamily } from "../../../src/catalog/evidence";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { ACTUATORS } from "../lib/data";
 import { num, price } from "../lib/format";
 import { Link } from "../lib/router";
 import { CompanyLogo } from "../components/CompanyLogo";
 import { CountryFlag } from "../components/CountryFlag";
+import { SdkBadge } from "./sdk/SdkBadge";
+import { PriceSparkline } from "../components/prices/PriceSparkline";
+import { RelatedPanel } from "../components/related/RelatedPanel";
 
 interface Props {
     id: string;
@@ -100,6 +104,7 @@ export function ExplodedView({ id, menuOpen = false }: Props) {
                         </p>
                         <h1>{actuator.name}</h1>
                         <p className="xp-evidence">{evidenceFor(actuator).label}</p>
+                        <SdkBadge actuatorId={actuator.id} />
                         <p className="xp-hint">{"Conceptual silhouette: not CAD or model-specific internals."} {reducerFamily ? "Generic reducer illustration. No motor included." : "Scroll to separate the illustrative panels."}</p>
                         <a className="xp-specs-jump" href="#catalog-content">
                             Jump to specifications
@@ -148,21 +153,26 @@ export function ExplodedView({ id, menuOpen = false }: Props) {
                         />
                         <Spec label="Reduction" value={actuator.gear_ratio ?? "–"} caveat={fieldCaveat(actuator, "gear_ratio")} />
                         <Spec label="Weight" value={`${num(actuator.weight_g)} g`} caveat={fieldCaveat(actuator, "weight_g")} />
-                        <Spec label="Price" value={price(actuator.price_usd)} caveat={fieldCaveat(actuator, "price_usd")} />
+                        <Spec label="Price" value={price(actuator.price_usd)} caveat={fieldCaveat(actuator, "price_usd")}>
+                            <PriceSparkline id={actuator.id} />
+                        </Spec>
                     </div>
                 </div>
             </div>
             <EngineeringEvidencePanel id={id} />
+            <MeasuredPanel id={id} />
+            <RelatedPanel actuator={actuator} />
         </div>
     );
 }
 
-function Spec({ label, value, caveat }: { label: string; value: string; caveat?: string }) {
+function Spec({ label, value, caveat, children }: { label: string; value: string; caveat?: string; children?: ReactNode }) {
     return (
         <div className="xp-spec">
             <span className="xp-spec-label">{label}</span>
             <span className="xp-spec-value">{value}</span>
             {caveat && <small>{caveat}</small>}
+            {children}
         </div>
     );
 }

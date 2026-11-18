@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Super-opinionated Bun/TypeScript stack for fast development. Uses `bun` as runtime and package manager.
-**Before any other work in this repo, enable prek:** `bun add -g prek && prek install`. Hooks are defined in `prek.toml`.
+**Before any other work in this repo, enable prek:** `uv tool install prek && prek install`. Hooks are defined in `prek.toml`.
 
 ## Common Commands
 
@@ -27,7 +27,7 @@ make lint           # Run Biome linter (check only)
 make deadcode       # Find dead code + unused deps with knip
 make typecheck      # Run TypeScript type checker (tsc --noEmit)
 make lint_links     # Check for broken links in markdown files
-make ci             # Run all CI checks (lint, deadcode, typecheck, tech_debt, duplicate_code, import_lint, lint_links, check_ai_writing, citation_audit, sync-agent-config-check, lint_immutable_refs)
+make ci             # Run all CI checks (lint, deadcode, typecheck, tech_debt, duplicate_code, import_lint, lint_links, check_ai_writing, citation_audit, sync-agent-config-check, lint_immutable_refs, validate_benchmarks)
 
 # Dependencies
 bun install         # Install dependencies
@@ -50,18 +50,21 @@ The deployed site (actuatorlist.com) is built for AI agents as well as people. I
 
 ## Data sourcing and licences
 
-The dataset is published under CC BY 4.0 (`LICENSE-DATA`). Facts are not copyrightable, so citing single facts is fine; copying a source's table, prose or paid data is not. Sources live in `src/supply-chain/sources.ts` and `src/humanoids/sources.ts`, and every one has a required `reuse` value:
+The dataset is published under CC BY 4.0 (`LICENSE-DATA`). Facts are not copyrightable, so citing single facts is fine; copying a source's table, prose or paid data is not. Sources live in a `sources.ts` registry next to the data they back (`src/supply-chain/` and its subfolders, `src/humanoids/`, `src/people/`, `src/open-source/`, `src/sdk/`, `src/benchmarks/`, `src/trends/`, `src/patents/`), and every one has a required `reuse` value:
 
 - `open`: public domain or openly licensed (USGS and other government statistics, CC-licensed papers, our own catalog paths). Use it only when the licence is clear; arXiv papers carry per-paper licences, so they default to `facts`.
 - `facts`: a copyrighted page we take individual facts from (news, datasheets, retailers, vendor sites, blogs). This is the default when unsure.
 - `restricted`: may be cited, but its data must not be redistributed (paywalled reports, analyst research, licensed price feeds). It may back at most 3 records.
+
+Price points in `data/prices/history.json` have no `sources.ts` entry: each cites the product page it was read from, and `src/prices/licence.ts` treats every page as `facts` (hardcoded there, not set in a registry) when it audits them.
 
 Rules when adding data:
 
 - Record a source for every new figure, and add the source with its `reuse` value.
 - Never copy a source's prose; write notes and summaries in your own words.
 - Never import a whole third-party table or dataset. A `facts` source backing more than 10 records fails the audit unless it is in that registry's allowlist (`FACTS_ALLOWLIST` or `HUMANOID_FACTS_ALLOWLIST`) with a one-line reason; prefer citing a second source.
-- `make citation_audit` (also in `make ci` and a prek hook on `src/supply-chain/` and `src/humanoids/`) enforces these rules; the logic is in `src/supply-chain/licence.ts`.
+- `make citation_audit` (also in `make ci` and a prek hook on `src/supply-chain/`, `src/humanoids/`, `src/sdk/`, `src/people/`, `src/open-source/`, `src/trends/`, `src/prices/`, `data/prices/`, `src/patents/` and `data/patents/`) enforces these rules; the logic is in `src/supply-chain/licence.ts`.
+- Measured runs under `data/benchmarks/` cite sources from `src/benchmarks/sources.ts` (allowlist `BENCHMARK_FACTS_ALLOWLIST`); `make validate_benchmarks` (in `make ci`) applies the same licence rules plus the test protocol in `docs/benchmarks/protocol.md`.
 
 ## Code Style
 
@@ -132,5 +135,6 @@ and `.codex/agents/<name>.toml` is generated. After any change under
 ## Git Workflow
 - **Protected Branch**: `main` is protected. Do not push directly to `main`. Use PRs.
 - **Merge Strategy**: Squash and merge.
+- **Deploys**: merging to `main` redeploys actuatorlist.com automatically, so no manual deploy step is needed.
 - **Pre-commit CI gate**: Always run make ci before committing any changes. Ensure it passes with zero errors. Do not commit if make ci fails - fix all issues first, then commit.
 - **Never force push**: Do not use `git push --force` or `--force-with-lease`. If you hit a git issue, stop and ask the user for guidance.

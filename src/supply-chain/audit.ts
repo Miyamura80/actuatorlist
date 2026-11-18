@@ -1,5 +1,23 @@
+import { robotLicenceErrors } from "../catalog/robot-licence";
+import { openSourceLicenceErrors } from "../open-source/licence";
+import { patentsLicenceErrors } from "../patents/licence";
+import { DIRECTORY_RECORDS } from "../people/records";
+import { pricesLicenceErrors } from "../prices/licence";
+import { sdkErrors } from "../sdk/audit";
+import { SDK_CHECKS } from "../sdk/checks";
+import { trendsLicenceErrors } from "../trends/licence";
+import {
+    ALT_TECHS,
+    DEPLOYMENTS,
+    MARKET_SLICES,
+    altErrors,
+    altTechRecords,
+} from "./alts";
+import { bomErrors, bomNodeRecords, bomRecords } from "./bom";
 import { COMPANIES } from "./companies";
 import { insideCountry } from "./countries";
+import { countryStageRecords } from "./country-pages";
+import { japanUnopenedSourceErrors } from "./country-pages/japan-sources";
 import { LAB_MINING_HHI, LAB_STAGE_SHARES } from "./lab-fixtures";
 import { LAB_TESLA_MARGIN, labNdStep } from "./lab-kit";
 import { humanoidLicenceErrors, licenceErrors } from "./licence";
@@ -30,6 +48,8 @@ import {
     NDFEB_PER_HUMANOID,
 } from "./perspective";
 import { POLICY_MEASURES, policyErrors } from "./policy";
+import { PROCESS_CHAINS, PROCESS_OWN_SHARES, processErrors } from "./processes";
+import { unopenedSourceErrors } from "./processes/sources";
 import {
     companySchema,
     siteSchema,
@@ -77,6 +97,17 @@ const DATASETS: Record<string, unknown> = {
     "metals-reserves": RESERVES,
     "metals-prices": [PRICE_SERIES, NDPR_PRICE_FLOOR],
     policy: POLICY_MEASURES,
+    // Key numbers only: map positions and 3D vignette geometry are layout.
+    // The magnet chain's country shares are the /metals records above; the
+    // precision chain's are its own.
+    processes: PROCESS_CHAINS.flatMap((c) =>
+        c.steps.map((s) => ({ id: `${c.id}/${s.id}`, keyNumbers: s.keyNumbers })),
+    ),
+    "process-shares": PROCESS_OWN_SHARES,
+    "country-stage-shares": countryStageRecords(),
+    "alts-techs": altTechRecords(),
+    "alts-market": MARKET_SLICES,
+    bom: bomRecords(),
 };
 
 // Records that cite sources without a number of their own.
@@ -87,6 +118,13 @@ const CITING_RECORDS: Record<string, readonly { sources: readonly string[] }[]> 
     "metals-price-chain": PRICE_CHAIN,
     "policy-measures": POLICY_MEASURES,
     "policy-status": POLICY_MEASURES.flatMap((m) => m.statusHistory),
+    "process-steps": PROCESS_CHAINS.flatMap((c) => c.steps),
+    "country-stage-gaps": countryStageRecords().flatMap((s) => (s.gap ? [s.gap] : [])),
+    "sdk-checks": Object.values(SDK_CHECKS).flat(),
+    "people-directory": DIRECTORY_RECORDS,
+    "alts-principles": ALT_TECHS,
+    "alts-deployments": DEPLOYMENTS,
+    "bom-nodes": bomNodeRecords(),
 };
 
 // Numbers that need no citation of their own: coordinates (the site carries
@@ -246,6 +284,12 @@ export function auditRegistry(
         ...duplicateIds(),
         ...referenceErrors(),
         ...policyErrors(today),
+        ...processErrors(),
+        ...unopenedSourceErrors(),
+        ...japanUnopenedSourceErrors(),
+        ...sdkErrors(today),
+        ...altErrors(),
+        ...bomErrors(),
     ];
     const used = new Set<string>();
     for (const [where, ids] of citations()) {
@@ -264,6 +308,11 @@ export function auditRegistry(
             allowlist: FACTS_ALLOWLIST,
         }),
         ...humanoidLicenceErrors(),
+        ...openSourceLicenceErrors(),
+        ...robotLicenceErrors(),
+        ...trendsLicenceErrors(today),
+        ...pricesLicenceErrors(today),
+        ...patentsLicenceErrors(),
     );
     const values = sourcedValueIssues(today);
     const orphans = SOURCES.filter((s) => !used.has(s.id)).map(

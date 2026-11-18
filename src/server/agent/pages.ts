@@ -4,6 +4,7 @@ import { compareBody } from "./compare";
 import { INVESTORS_PATH } from "@/investors";
 import { CONTRIBUTORS, CONTRIBUTORS_PATH } from "@/people";
 import { STARTUPS_PATH } from "@/startups";
+import { BENCHMARKS_PAGE } from "./benchmarks/page";
 import {
     actuatorBody,
     actuatorPath,
@@ -20,6 +21,7 @@ import * as ld from "./jsonld";
 import { PATHS } from "./links";
 import { agentsBody } from "./manifests";
 import { mdDocument } from "./md";
+import { OPEN_SOURCE_PAGE } from "./open-source/page";
 import {
     actuatorsBody,
     faqItems,
@@ -28,12 +30,21 @@ import {
     robotsBody,
     topBy,
 } from "./pages-md";
+import { PATENTS_PAGE } from "./patents/page";
+import { PEOPLE_PAGE } from "./people/page";
+import { PRICES_PAGE } from "./prices/page";
+import { SDK_PAGE } from "./sdk";
 import { actuatorSeoTitle } from "./seo-titles";
 import { startupsBody } from "./startups";
+import { ALTS_PAGE } from "./supply-chain/alts";
+import { BOM_CASE_PAGES, BOM_INDEX_PAGE } from "./supply-chain/bom";
+import { COUNTRY_PAGE_ENTRIES } from "./supply-chain/country";
+import { MANUFACTURING_PAGE } from "./supply-chain/manufacturing";
 import { METALS_PAGE } from "./supply-chain/metals";
 import { HIDDEN_PAGES } from "./supply-chain/pages";
 import { POLICY_PAGE } from "./supply-chain/policy";
 import { TOOL_PAGES } from "./tools";
+import { TRENDS_PAGE } from "./trends/page";
 import { aboutBody, contactBody, privacyBody } from "./trust";
 
 // Every HTML page the site serves, with the metadata and markdown body shared
@@ -147,8 +158,20 @@ const STATIC_PAGES: Page[] = [
         image: PATHS.ogInvestors,
     },
     HUMANOIDS_PAGE,
+    OPEN_SOURCE_PAGE,
     METALS_PAGE,
     POLICY_PAGE,
+    BENCHMARKS_PAGE,
+    MANUFACTURING_PAGE,
+    ALTS_PAGE,
+    BOM_INDEX_PAGE,
+    ...BOM_CASE_PAGES,
+    ...COUNTRY_PAGE_ENTRIES,
+    SDK_PAGE,
+    PEOPLE_PAGE,
+    TRENDS_PAGE,
+    PRICES_PAGE,
+    PATENTS_PAGE,
     sub(
         PATHS.agentsPage,
         "spa",

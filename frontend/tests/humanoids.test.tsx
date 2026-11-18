@@ -76,7 +76,7 @@ test("the fleet folds by default with a count and a one-line hint", () => {
     const view = render(<Humanoids />);
     const fleet = view.container.querySelector<HTMLDetailsElement>("details.hm-fleet")!;
     expect(fleet.open).toBe(false);
-    expect(fleet.querySelector("summary")?.textContent).toBe("Fleet (21)Most magnet: X1, 2.60 kg");
+    expect(fleet.querySelector("summary")?.textContent).toBe(`Fleet (${HUMANOIDS.length})Most magnet: X1, 2.60 kg`);
     cleanup();
     setURL("/humanoids?page=2");
     const deep = render(<Humanoids />);
@@ -92,7 +92,7 @@ test("the fleet paginates 10 rows a page and sorts across every page", () => {
     act(() => {
         fireEvent.click(view.getByRole("button", { name: "Page 3" }));
     });
-    expect(rowNames(root)).toHaveLength(1);
+    expect(rowNames(root)).toHaveLength(Math.min(10, HUMANOIDS.length - 20));
     expect(new URLSearchParams(window.location.search).get("page")).toBe("3");
     // Sorting by name resets to page 1 and orders the whole fleet, not the page.
     act(() => {
@@ -341,4 +341,26 @@ test("a joint shows the motor-side torque its magnet is sized from", () => {
     const panel = view.container.textContent ?? "";
     expect(panel).toContain("At the motor");
     expect(panel).toContain("2.81 N·m via 80:1, 80% efficient");
+});
+
+test("the joint panel skips the repeated name, folds the summary and scrolls its table", () => {
+    setURL("/humanoids?robot=unitree-g1");
+    const view = render(<Humanoids />);
+    const panel = view.container.querySelector(".hm-panel")!;
+    expect(panel.querySelector("h3")).toBeNull();
+    const about = panel.querySelector("details.fold")!;
+    expect(about.querySelector("summary")?.textContent).toBe("About this build");
+    expect(about.hasAttribute("open")).toBe(false);
+    expect(panel.querySelector(".hm-list-scroll > table.hm-list")).not.toBeNull();
+});
+
+test("the legend lists only actuator types the robots on screen use", () => {
+    for (const robot of HUMANOIDS) {
+        setURL(`/humanoids?robot=${robot.id}`);
+        const view = render(<Humanoids />);
+        const legend = view.container.querySelector(".hm-legend")!;
+        const swatches = [...legend.querySelectorAll(":scope > span:not(.hm-legend-sep)")].length - 1;
+        expect(swatches).toBe(new Set(robot.joints.map(j => j.actuatorType)).size);
+        cleanup();
+    }
 });

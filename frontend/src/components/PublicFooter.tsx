@@ -1,12 +1,22 @@
-import { FOOTER_GROUPS } from "../../../src/public-navigation";
+import { FOOTER_GROUPS, footerMore } from "../../../src/public-navigation";
 import { isRepoHref } from "../../../src/repo-link";
 import { GitHubMark } from "./GitHubMark";
 
-export function PublicFooter() {
+type Group = (typeof FOOTER_GROUPS)[number];
+
+function Links({ group }: { group: Group }) {
+    return <>{group.links.map(([href, label]) => <a key={href} href={href}>{isRepoHref(href) && <GitHubMark />}{label}</a>)}</>;
+}
+
+// Three short columns; every other page waits behind a native "All pages" fold.
+export function PublicFooter({ path }: { path?: string }) {
     return <footer className="site-footer"><nav aria-label="Footer">
-        {FOOTER_GROUPS.map((group) => <section key={group.label}>
-            <h2>{group.label}</h2>
-            {group.links.map(([href, label]) => <a key={href} href={href}>{isRepoHref(href) && <GitHubMark />}{label}</a>)}
-        </section>)}
+        {FOOTER_GROUPS.map((group) => <section key={group.label}><h2>{group.label}</h2><Links group={group} /></section>)}
+        <details className="site-footer-more">
+            <summary>All pages</summary>
+            <div className="site-footer-more-body">
+                {footerMore(path).map((group) => <section key={group.label}><h2>{group.label}</h2><Links group={group} /></section>)}
+            </div>
+        </details>
     </nav></footer>;
 }

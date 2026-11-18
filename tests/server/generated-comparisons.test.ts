@@ -279,6 +279,8 @@ test("every registry URL has unique exact-model metadata, one sitemap entry, a M
             })
             .transform(html);
     }
+    // /mcp is the footer's MCP endpoint: POST only, covered by its own tests.
+    internal.delete("/mcp");
     for (const path of internal) expect((await get(path)).status, path).toBe(200);
 });
 

@@ -118,3 +118,23 @@ test("zero speed explains why torque is unknown and offers no shortlist", () => 
     expect(view.container.textContent).toContain("Stall torque is a motor rating");
     expect(view.queryByRole("link", { name: /Compare top/ })).toBeNull();
 });
+
+test("first viewport: a result line and one primary CTA; three rows, then Show all", () => {
+    setUrl("http://localhost/tools/motor-torque-calculator?solve=power&t=5&n=20");
+    const view = render(<MotorTorqueCalculator />);
+    const result = view.container.querySelector(".calc-readout .req-result");
+    const list = shortlist(ACTUATORS, { torqueNm: 5, speedRpm: 20 }, 6);
+    expect(result?.textContent).toContain(`${list.total} actuators reach 5 N·m at 20 rpm`);
+    expect(result?.querySelector("a.cta-primary")?.textContent).toMatch(/Compare top 4 side by side/);
+    expect(view.container.querySelectorAll("a.cta-primary")).toHaveLength(1);
+    expect(view.container.querySelectorAll(".req-row")).toHaveLength(3);
+    const more = view.getByRole("button", { name: `Show all ${list.rows.length}` });
+    expect(more.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(more);
+    expect(more.getAttribute("aria-expanded")).toBe("true");
+    expect(view.container.querySelectorAll(".req-row")).toHaveLength(list.rows.length);
+    // Examples wait behind one closed row.
+    const examples = view.container.querySelector("details.calc-examples-fold");
+    expect(examples?.hasAttribute("open")).toBe(false);
+    expect(examples?.querySelectorAll("button")).toHaveLength(3);
+});

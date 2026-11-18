@@ -3,6 +3,7 @@ import {
     canonicalComparisonPath,
     comparisonDirectory,
 } from "@/catalog/comparison-registry";
+import { LIVE_COUNTRY_PATHS } from "@/supply-chain/country-pages";
 import { compareBody, compareVisual } from "../agent/compare";
 import { renderSpaPage, renderStaticPage } from "../agent/html/render";
 import { PATHS } from "../agent/links";
@@ -141,6 +142,18 @@ const PAGE_PATHS = [
     "/humanoids",
     "/metals",
     "/policy",
+    "/open-source",
+    "/benchmarks",
+    "/manufacturing",
+    "/alts",
+    "/bom",
+    "/bom/:slug",
+    ...LIVE_COUNTRY_PATHS,
+    "/sdk",
+    "/people",
+    "/trends",
+    "/prices",
+    "/patents",
 ];
 
 // Standalone agent documents open with their H1 (no frontmatter). /agents.md
@@ -171,4 +184,5 @@ export const routes: Route[] = [
     { method: "GET", path: "/comparisons/:file", handler: twin },
     { method: "GET", path: "/tools/:file", handler: twin },
     { method: "GET", path: "/lab/:file", handler: twin },
+    { method: "GET", path: "/bom/:file", handler: twin },
 ];

@@ -9,6 +9,7 @@ import {
 import { METAL_CLASS_LABEL, METALS, type MetalId } from "../../../../../src/supply-chain/metals/elements";
 import type { Sourced } from "../../../../../src/supply-chain/sourced";
 import { FootnoteRef, SourcedValue } from "../../../components/supply-chain/SourcedValue";
+import { Fold } from "../../../components/ui/Fold";
 
 // 1. What goes in: six element tiles, the grade's composition as one bar and
 // what one humanoid's magnets hold.
@@ -46,8 +47,8 @@ export function WhatGoesIn({ element, grade, onElement, onGrade }: {
                 <i>{m.magnet}</i>
             </button>)}
         </div>
-        <p className="mt-role">
-            <b>{picked.name}</b> · {METAL_CLASS_LABEL[picked.class].toLowerCase()} · {picked.role}
+        <p className="mt-role" title={METAL_CLASS_LABEL[picked.class]}>
+            <b>{picked.name}</b> · {picked.role}
             <FootnoteRef sources={picked.sources} asOf="2026" confidence="reported" />
         </p>
 
@@ -76,7 +77,13 @@ export function WhatGoesIn({ element, grade, onElement, onGrade }: {
                     <SourcedValue value={comp[p.key]} format={share} />
                 </li>)}
             </ul>
-            <p className="mt-note">{g.use}</p>
+            <Fold className="mt-grade-use" title="Used in" headline={g.use}>
+                <ul className="mt-grade-list">
+                    {MAGNET_GRADES.map((x) => <li key={x.id} className={x.id === grade ? "is-on" : undefined}>
+                        <b>{x.suffix === "none" ? "N" : x.suffix}</b> {x.use}
+                    </li>)}
+                </ul>
+            </Fold>
         </figure>
 
         <dl className="mt-humanoid">

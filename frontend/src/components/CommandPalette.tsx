@@ -9,6 +9,7 @@ import { ACTUATORS } from "../lib/data";
 import { ROBOTS } from "../lib/robots";
 import { CATEGORY_MAP } from "../types";
 import { navigate } from "../lib/router";
+import { OPEN_PALETTE_EVENT } from "../lib/command-palette";
 import { ActuatorIcon, RobotIcon } from "./PaletteIcons";
 import { CompanyLogo } from "./CompanyLogo";
 
@@ -34,7 +35,7 @@ function buildIndex(): Item[] {
         sub: r.brand,
         brand: r.brand,
         to: `/robots#${r.id}`,
-        hay: `${r.name} ${r.brand} ${r.country ?? ""}`.toLowerCase(),
+        hay: `${r.name} ${r.brand} ${r.kind.replace("_", " ")} ${r.country ?? ""}`.toLowerCase(),
     }));
     const actuators: Item[] = ACTUATORS.map((a) => ({
         key: `actuator:${a.id}`,
@@ -62,37 +63,46 @@ export function CommandPalette() {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
     const [active, setActive] = useState(0);
+    // Each open starts from an empty query with the first row highlighted.
+    const reset = () => {
+        setQuery("");
+        setActive(0);
+    };
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
 
-    const index = useMemo(buildIndex, []);
+    const index = useMemo(() => buildIndex(), []);
     const results = useMemo(() => match(index, query), [index, query]);
 
-    // Global shortcut: Cmd/Ctrl+K toggles the palette from anywhere.
+    // Global shortcut: Cmd/Ctrl+K toggles the palette from anywhere. The
+    // header's search icon opens it through OPEN_PALETTE_EVENT.
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
                 e.preventDefault();
                 setOpen((v) => !v);
+                reset();
             }
         };
+        const onOpen = (e: Event) => {
+            e.preventDefault();
+            setOpen(true);
+            reset();
+        };
         window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
+        window.addEventListener(OPEN_PALETTE_EVENT, onOpen);
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            window.removeEventListener(OPEN_PALETTE_EVENT, onOpen);
+        };
     }, []);
 
-    // Reset the query and focus the input each time the palette opens.
+    // Focus the input each time the palette opens.
     useEffect(() => {
         if (!open) return;
-        setQuery("");
-        setActive(0);
         const id = requestAnimationFrame(() => inputRef.current?.focus());
         return () => cancelAnimationFrame(id);
     }, [open]);
-
-    // Keep the highlighted row in range as the result set shrinks.
-    useEffect(() => {
-        setActive((a) => (a >= results.length ? 0 : a));
-    }, [results.length]);
 
     // Keep the active row scrolled into view during keyboard navigation.
     useEffect(() => {
@@ -131,22 +141,8 @@ export function CommandPalette() {
         }
     };
 
+    if (!open) return null;
     return (
-        <>
-            <button
-                type="button"
-                className="cmdk-trigger"
-                onClick={() => setOpen(true)}
-                aria-label="Search actuators and robots"
-            >
-                <span className="cmdk-trigger-icon" aria-hidden="true">
-                    ⌕
-                </span>
-                <span className="cmdk-trigger-text">Search</span>
-                <kbd className="cmdk-trigger-kbd">⌘K</kbd>
-            </button>
-
-            {open && (
                 <div
                     className="cmdk-scrim"
                     onClick={() => setOpen(false)}
@@ -170,7 +166,10 @@ export function CommandPalette() {
                                 type="text"
                                 placeholder="Search actuators and robots…"
                                 value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setQuery(e.target.value);
+                                    setActive(0);
+                                }}
                                 onKeyDown={onInputKey}
                                 aria-label="Search query"
                                 // biome-ignore lint/a11y/noAutofocus: focus is the whole point of a command palette
@@ -232,7 +231,5 @@ export function CommandPalette() {
                         </div>
                     </div>
                 </div>
-            )}
-        </>
     );
 }

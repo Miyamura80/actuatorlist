@@ -34,6 +34,8 @@
 .mk-land[data-step="5"] { fill: color-mix(in srgb, var(--cyan-dim) 88%, #000); }
 .mk-land.is-active, .mk-land.is-selected { stroke: var(--cyan); stroke-width: 1.2; }
 .mk-land[role="button"] { cursor: pointer; }
+.mk-country.has-region .mk-land:not(.is-selected) { opacity: 0.35; }
+.mk-country.has-region .mk-land.is-selected { stroke: var(--cyan); stroke-width: 1.5; }
 .mk-land[role="button"]:focus-visible { outline: none; stroke: var(--cyan); stroke-width: 2; }
 
 /* HTML overlay: markers, chips and tags sit on top of the SVG. */
@@ -208,7 +210,6 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transform: translateY(calc(-100% - 2px));
     padding: 3px 6px;
     border: 1px solid var(--line-strong);
     background: #000;
@@ -219,7 +220,6 @@
     white-space: nowrap;
     cursor: pointer;
 }
-.mk-cluster-tag.is-end { transform: translate(-100%, calc(-100% - 2px)); }
 .mk-cluster-index { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .mk-cluster-index button {
     display: inline-flex;
@@ -244,6 +244,9 @@
 /* Arcs */
 .mk-arc-line { fill: none; stroke: var(--cyan-dim); stroke-width: 1.2; opacity: 0.75; transition: opacity 150ms, stroke 150ms; }
 .mk-arc-estimated .mk-arc-line { stroke-dasharray: 4 3; }
+.mk-arc-kind-investment .mk-arc-line, .mk-arc-kind-partnership .mk-arc-line { stroke: var(--muted); stroke-dasharray: 1 3; stroke-linecap: round; }
+/* Estimated and non-supply at once: dash-dot, so both encodings still read. */
+.mk-arc-estimated.mk-arc-kind-investment .mk-arc-line, .mk-arc-estimated.mk-arc-kind-partnership .mk-arc-line { stroke-dasharray: 4 3 1 3; }
 .mk-arc-hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
 .mk-arrow { fill: var(--cyan-dim); }
 .mk-arcs.has-focus .mk-arc .mk-arc-line { opacity: 0.18; }
@@ -268,7 +271,9 @@
 }
 .mk-chip .flag { font-size: 11px; }
 .mk-chip b { color: var(--cyan); }
-a.mk-chip:hover, a.mk-chip:focus-visible { background: var(--cyan); color: #000; outline: none; }
+a.mk-chip:hover, a.mk-chip:focus-visible, button.mk-chip:hover, button.mk-chip:focus-visible { background: var(--cyan); color: #000; outline: none; }
+button.mk-chip { cursor: pointer; }
+a.mk-chip:hover b, a.mk-chip:focus-visible b, button.mk-chip:hover b, button.mk-chip:focus-visible b { color: #000; }
 span.mk-chip { border-style: dashed; color: var(--muted); }
 .mk-chip-dir { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 .mk-chip-dir.is-in { transform: rotate(180deg); }
@@ -384,9 +389,10 @@ span.mk-chip { border-style: dashed; color: var(--muted); }
     .mk-drawer {
         position: fixed;
         top: auto;
+        bottom: 0;
         left: 0;
         width: auto;
-        max-height: 60vh;
+        max-height: 42vh;
         border-left: 0;
         border-top: 1px solid var(--cyan-dim);
         animation-name: mk-up;
@@ -401,3 +407,13 @@ span.mk-chip { border-style: dashed; color: var(--muted); }
     .mk-drawer { animation: none; }
     .mk-land, .mk-arc-line, .mk-tip, .mk-labels, .mk-pin .mk-tile, .mk-cluster, .mk-group { transition: none; }
 }
+
+/* Drill-down breadcrumb: the levels above the open card, each a step back. */
+.mk-crumbs { grid-column: 1; display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 4px; font: 500 11px/1.4 var(--mono); }
+.mk-crumbs button { all: unset; cursor: pointer; color: var(--muted); }
+.mk-crumbs button::after { content: "\203A"; margin: 0 6px; color: var(--line-strong); }
+.mk-crumbs button:hover, .mk-crumbs button:focus-visible { color: var(--cyan); }
+.mk-crumbs button:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
+.mk-level { animation: mk-fade 140ms ease-out; }
+@keyframes mk-fade { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .mk-level { animation: none; } }

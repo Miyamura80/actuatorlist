@@ -13,6 +13,7 @@ import {
     stageEntry,
     yearsOfSupply,
 } from "@/supply-chain/metals";
+import { getSource } from "@/supply-chain/sources";
 
 describe("priceAt", () => {
     test("returns the annual average for any month of its year", () => {
@@ -32,7 +33,7 @@ describe("priceAt", () => {
 
     test("carries the last point forward and says so", () => {
         const p = priceAt("dy-metal-cn", "2026-05");
-        expect(p?.value.value).toBe(220.93);
+        expect(p?.value.value).toBe(191.08);
         expect(p?.carried).toBe(true);
         expect(priceAt("ndpr-oxide", "2026-10")?.carried).toBe(true);
     });
@@ -57,6 +58,64 @@ describe("metals dataset", () => {
                 expect(p.value.sources.length).toBeGreaterThan(0);
                 expect(p.date.startsWith(p.value.asOf.slice(0, 4))).toBe(true);
             }
+    });
+
+    test("USGS Nd, Pr, Dy, Tb and Sm oxide series cover 2014-2025 with open, per-edition sources", () => {
+        const years = Array.from({ length: 12 }, (_, i) => String(2014 + i));
+        const avg = (id: string) =>
+            new Map(
+                (PRICE_SERIES.find((s) => s.id === id)?.points ?? [])
+                    .filter((p) => p.basis === "annual-average")
+                    .map((p) => [p.date, p]),
+            );
+        const nd = avg("nd-oxide");
+        const dy = avg("dy-oxide");
+        const tb = avg("tb-oxide");
+        const pr = avg("pr-oxide");
+        const sm = avg("sm-oxide");
+        for (const series of [nd, dy, tb, pr, sm]) {
+            expect([...series.keys()].sort()).toEqual(years);
+            for (const p of series.values()) {
+                expect(p.value.sources).toHaveLength(1);
+                const src = getSource(p.value.sources[0] ?? "");
+                expect(src?.publisher).toBe("USGS");
+                expect(src?.reuse).toBe("open");
+                // Only the latest edition's own year is an estimate.
+                expect(p.value.confidence).toBe(
+                    p.date === "2025" ? "estimated" : "reported",
+                );
+            }
+        }
+        // Settled figures replace the 2021 edition's 2020 estimates.
+        expect(nd.get("2020")?.value.value).toBe(49);
+        expect(nd.get("2020")?.value.sources).toEqual(["usgs-mcs-2025-ree"]);
+        for (const y of years) {
+            const n = nd.get(y)?.value.value ?? 0;
+            const d = dy.get(y)?.value.value ?? 0;
+            const t = tb.get(y)?.value.value ?? 0;
+            expect(n).toBeGreaterThan(30);
+            expect(n).toBeLessThan(200);
+            expect(d).toBeGreaterThan(n);
+            expect(t).toBeGreaterThan(d);
+        }
+    });
+
+    test("Pr and Sm oxide before 2021 come from the Minerals Yearbook", () => {
+        const value = (id: string, year: string) =>
+            PRICE_SERIES.find((s) => s.id === id)?.points.find(
+                (p) => p.basis === "annual-average" && p.date === year,
+            )?.value;
+        expect(value("pr-oxide", "2014")?.value).toBe(121);
+        expect(value("sm-oxide", "2014")?.value).toBe(7);
+        expect(value("pr-oxide", "2020")?.sources).toEqual(["usgs-myb-2020-ree"]);
+        // Pr tracks Nd within a factor of two; Sm is a cheap light oxide.
+        for (let y = 2014; y <= 2025; y++) {
+            const pr = value("pr-oxide", String(y))?.value ?? 0;
+            const nd = value("nd-oxide", String(y))?.value ?? 1;
+            expect(pr / nd).toBeGreaterThan(0.5);
+            expect(pr / nd).toBeLessThan(2);
+            expect(value("sm-oxide", String(y))?.value ?? 99).toBeLessThan(10);
+        }
     });
 
     test("China domestic is cheaper than export where both exist", () => {
