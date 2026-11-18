@@ -2,7 +2,7 @@ import assets from "./assets.json";
 import type { DirectoryRecord } from "./directory";
 import { DIRECTORY_ORGS } from "./orgs";
 import { DIRECTORY_RECORDS } from "./records";
-import type { AssetFile, ImageAsset, LinkKind, Org, OrgRecord } from "./types";
+import type { AssetFile, ImageAsset, LinkKind, Org, OrgRecord, School } from "./types";
 
 export type * from "./types";
 export { LICENCES } from "./types";
@@ -33,16 +33,28 @@ const ORG_RECORDS = {
         url: "https://manmaruai.co.jp/",
         brandId: "manmaru",
     },
+    enactic: { name: "Enactic", url: "https://enactic.ai/" },
     ...DIRECTORY_ORGS,
 } as const satisfies Record<string, OrgRecord>;
 
 export type OrgId = keyof typeof ORG_RECORDS;
+
+const SCHOOL_RECORDS = {
+    oxford: { name: "University of Oxford", url: "https://www.ox.ac.uk/" },
+    imperial: { name: "Imperial College London", url: "https://www.imperial.ac.uk/" },
+    stanford: { name: "Stanford University", url: "https://www.stanford.edu/" },
+    "tokyo-denki": { name: "Tokyo Denki University", url: "https://www.dendai.ac.jp/" },
+} as const satisfies Record<string, Omit<School, "id" | "icon">>;
+
+export type SchoolId = keyof typeof SCHOOL_RECORDS;
 
 export interface Person {
     id: string;
     name: string;
     role: string;
     orgId: OrgId;
+    // The most prominent university on their record, shown as its icon.
+    schoolId?: SchoolId;
     headshot?: ImageAsset;
     links: { kind: LinkKind; url: string }[];
     // "core" draws the large card; "member" a contributor card.
@@ -56,6 +68,7 @@ const PEOPLE_RECORDS: Person[] = [
         name: "Eito Miyamura",
         role: "Creator and maintainer",
         orgId: "actuatorlist",
+        schoolId: "oxford",
         links: [
             { kind: "github", url: "https://github.com/Miyamura80" },
             { kind: "web", url: "https://eito.me/" },
@@ -67,8 +80,9 @@ const PEOPLE_RECORDS: Person[] = [
         name: "Soumil Sahjpall",
         role: "Contributor",
         orgId: "ducky-drones",
-        // Soumil's GitHub handle is unknown; add a github link once known.
+        schoolId: "imperial",
         links: [
+            { kind: "github", url: "https://github.com/bonusducks777" },
             { kind: "linkedin", url: "https://www.linkedin.com/in/soumil-sahjpall/" },
         ],
         contributor: "member",
@@ -78,6 +92,7 @@ const PEOPLE_RECORDS: Person[] = [
         name: "Cornelia Weinzierl",
         role: "Contributor",
         orgId: "tau-robotics",
+        schoolId: "stanford",
         links: [
             { kind: "github", url: "https://github.com/CorneliaMelon" },
             {
@@ -92,7 +107,25 @@ const PEOPLE_RECORDS: Person[] = [
         name: "Shota Yoshikai",
         role: "Contributor",
         orgId: "manmaru-ai",
-        links: [{ kind: "linkedin", url: "https://jp.linkedin.com/in/shota-yoshikai" }],
+        schoolId: "tokyo-denki",
+        links: [
+            { kind: "github", url: "https://github.com/tinjyuu" },
+            { kind: "linkedin", url: "https://jp.linkedin.com/in/shota-yoshikai" },
+        ],
+        contributor: "member",
+    },
+    {
+        id: "hiro-yamamoto",
+        name: "Hiro Yamamoto",
+        // Feedback on the actuator trade-offs (compliance vs repeatability,
+        // QDD vs harmonic) and on OEM-built "in-house" actuators.
+        role: "Co-founder of Enactic, creator of OpenArm",
+        orgId: "enactic",
+        schoolId: "stanford",
+        links: [
+            { kind: "github", url: "https://github.com/hiroyams" },
+            { kind: "linkedin", url: "https://jp.linkedin.com/in/hiroyams" },
+        ],
         contributor: "member",
     },
     ...DIRECTORY_RECORDS,
@@ -104,6 +137,13 @@ export const ORGS = Object.fromEntries(
         return [id, { id, ...o, ...(logo ? { logo } : {}) }];
     }),
 ) as Record<OrgId, Org>;
+
+export const SCHOOLS = Object.fromEntries(
+    Object.entries(SCHOOL_RECORDS).map(([id, s]) => {
+        const icon = ASSETS.schools[id];
+        return [id, { id, ...s, ...(icon ? { icon } : {}) }];
+    }),
+) as Record<SchoolId, School>;
 
 export const PEOPLE: Person[] = PEOPLE_RECORDS.map((p) => {
     const headshot = ASSETS.people[p.id];
@@ -118,6 +158,10 @@ export const CONTRIBUTORS: Person[] = [
 
 export function orgOf(person: Person): Org {
     return ORGS[person.orgId];
+}
+
+export function schoolOf(person: Person): School | null {
+    return person.schoolId ? SCHOOLS[person.schoolId] : null;
 }
 
 // A /people directory entry with its headshot, if one is recorded.

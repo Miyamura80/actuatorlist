@@ -4,6 +4,7 @@ import {
     LINK_LABEL,
     type Person,
     orgOf,
+    schoolOf,
 } from "@/people";
 import { REPO_URL, absoluteUrl } from "../site";
 import { bullets, mdLink } from "./md";
@@ -13,7 +14,9 @@ import { bullets, mdLink } from "./md";
 function line(p: Person): string {
     const org = orgOf(p);
     const links = p.links.map((l) => mdLink(LINK_LABEL[l.kind], l.url)).join(", ");
-    return `**${p.name}**, ${p.role}, ${mdLink(org.name, org.url)}.${links ? ` ${links}` : ""}`;
+    const s = schoolOf(p);
+    const school = s ? `, ${mdLink(s.name, s.url)}` : "";
+    return `**${p.name}**, ${p.role}, ${mdLink(org.name, org.url)}${school}.${links ? ` ${links}` : ""}`;
 }
 
 function section(heading: string, kind: Person["contributor"]): string {
@@ -36,12 +39,22 @@ export function personId(p: Person): string {
 
 export function personNode(p: Person): Record<string, unknown> {
     const org = orgOf(p);
+    const school = schoolOf(p);
     return {
         "@type": "Person",
         "@id": personId(p),
         name: p.name,
         jobTitle: p.role,
         affiliation: { "@type": "Organization", name: org.name, url: org.url },
+        ...(school
+            ? {
+                  alumniOf: {
+                      "@type": "CollegeOrUniversity",
+                      name: school.name,
+                      url: school.url,
+                  },
+              }
+            : {}),
         ...(p.headshot ? { image: absoluteUrl(p.headshot.path) } : {}),
         ...(p.links.length ? { sameAs: p.links.map((l) => l.url) } : {}),
     };

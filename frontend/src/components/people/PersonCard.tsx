@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { initials, LINK_LABEL, orgOf, type LinkKind, type Person } from "../../../../src/people";
+import { initials, LINK_LABEL, orgOf, schoolOf, type LinkKind, type Person } from "../../../../src/people";
 import { OrgLogo } from "./OrgLogo";
 
 // simple-icons marks (viewBox 0 0 24 24); web and scholar share a globe.
@@ -26,6 +26,17 @@ function LinkIcon({ kind }: { kind: LinkKind }) {
     );
 }
 
+// The university as its icon only; the name is the tooltip and alt text.
+function SchoolMark({ person }: { person: Person }) {
+    const school = schoolOf(person);
+    if (!school?.icon) return null;
+    return (
+        <a className="pc-school" href={school.url} target="_blank" rel="noopener" title={school.name}>
+            <img src={school.icon.path} alt={school.name} width={20} height={20} loading="lazy" decoding="async" />
+        </a>
+    );
+}
+
 function Headshot({ person }: { person: Person }) {
     return (
         <div className="pc-face">
@@ -41,17 +52,22 @@ function Headshot({ person }: { person: Person }) {
 }
 
 // One person: headshot, name and links. The core card (person.contributor
-// "core") is larger and adds the role; every other card adds the affiliation.
-// `children` (the /people role, why and key works) sits under the affiliation.
+// "core") is larger and adds the role; every other card adds the affiliation,
+// plus the role when it says more than "Contributor". `children` (the /people
+// role, why and key works) sits under the affiliation.
 export function PersonCard({ person, children }: { person: Person; children?: ReactNode }) {
     const core = person.contributor === "core";
     return (
         <article id={person.id} className={`pc${core ? " pc-core" : ""}`} aria-label={person.name}>
             <Headshot person={person} />
             <div className="pc-body">
-                <h3 className="pc-name">{person.name}</h3>
+                <div className="pc-head">
+                    <h3 className="pc-name">{person.name}</h3>
+                    <SchoolMark person={person} />
+                </div>
                 {core && <p className="pc-role">{person.role}</p>}
                 {!core && <OrgLogo org={orgOf(person)} />}
+                {!core && person.role !== "Contributor" && <p className="pc-role pc-role-member">{person.role}</p>}
                 {children}
                 {person.links.length > 0 && (
                     <div className="pc-links">
