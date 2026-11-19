@@ -3759,7 +3759,7 @@
     "gear_ratio": "77.5:1",
     "weight_g": 18,
     "torque_density_nm_per_kg": 11.9,
-    "backdrivable": null,
+    "backdrivable": true,
     "backlash_arcmin": null,
     "repeatability_arcmin": null,
     "voltage_v": "3.7-6.0",
@@ -3780,11 +3780,13 @@
     "encoder": "12-bit absolute (4096 steps), contactless magnetic",
     "integrated_driver": true,
     "ip_rating": null,
-    "notes": "Fast, low-ratio sibling of the XL330-M288-T in the same 18g plastic-gear case. Stall torque 0.215 N.m at 1.47A and no-load 383 rpm quoted at 5.0V (0.180 N.m / 278 rpm at 3.7V, 0.228 N.m / 456 rpm at 6.0V). Cored motor, 77.5:1. Drives the antennas on Pollen's Reachy Mini. Protocol 2.0 over TTL.",
+    "notes": "Fast, low-ratio sibling of the XL330-M288-T in the same 18g plastic-gear case. Stall torque 0.215 N.m at 1.47A and no-load 383 rpm quoted at 5.0V (0.180 N.m / 278 rpm at 3.7V, 0.228 N.m / 456 rpm at 6.0V). Cored motor, 77.5:1. Drives the antennas on Pollen's Reachy Mini. Protocol 2.0 over TTL. Backdrivable: the Koch v1.1 and low-cost-robot leader arms, which the operator moves by hand during teleoperation, are built from six of these.",
     "sources": [
       "https://robotis.us/products/dynamixel-xl330-m077-t",
       "https://emanual.robotis.com/docs/en/dxl/x/xl330-m077/",
-      "https://github.com/ROBOTIS-GIT/emanual/blob/master/_data/dxl_x_info.yml"
+      "https://github.com/ROBOTIS-GIT/emanual/blob/master/_data/dxl_x_info.yml",
+      "https://github.com/jess-moss/koch-v1-1",
+      "https://github.com/AlexanderKoch-Koch/low_cost_robot"
     ],
     "verified": true,
     "price_per_nm": 127.86,
