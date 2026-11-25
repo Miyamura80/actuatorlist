@@ -159,7 +159,7 @@ describe("precision process chain", () => {
             expect(s?.confidence === "reported").toBe(false);
             expect((s?.note ?? "").length).toBeGreaterThan(20);
         }
-        expect(auditRegistry("2026-11-07").errors).toEqual([]);
+        expect(auditRegistry().errors).toEqual([]);
     });
 
     test("unopened documents are exactly those without an accessed date", () => {

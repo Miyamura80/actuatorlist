@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { ACTUATORS } from "@/catalog";
 import {
+    HISTORY_RECORDS,
     PRICE_POINTS,
     type PricePoint,
     actuatorsWithHistory,
     classTrends,
     groupStats,
     historyFor,
+    isPriced,
     lagCorrelations,
     metalsOverlay,
     pearson,
@@ -60,16 +62,55 @@ describe("merged history", () => {
         }
     });
 
-    test("every priced catalog actuator ends on its catalog price", () => {
+    test("every priced catalog actuator ends on its catalog price or this month's snapshot", () => {
+        // An in-stock snapshot taken in the catalog month supersedes the
+        // catalog price (build() drops the catalog point); an out-of-stock one
+        // does not, and is skipped as a listed price.
         for (const a of ACTUATORS.filter((x) => x.price_usd != null)) {
-            const last = historyFor(a.id).at(-1);
-            expect(last?.date).toBe(CATALOG_PRICE_DATE);
-            expect(last?.priceUsd).toBe(a.price_usd as number);
-            expect(last?.sources).toEqual([`catalog:${a.id}`]);
+            const points = historyFor(a.id);
+            const last = points.filter(isPriced).at(-1);
+            const monthSnaps = HISTORY_RECORDS.filter(
+                (r) =>
+                    r.actuatorId === a.id &&
+                    !r.outOfStock &&
+                    r.date.startsWith(CATALOG_PRICE_DATE),
+            );
+            const catalog = points.filter((p) => p.sources[0] === `catalog:${a.id}`);
+            if (monthSnaps.length > 0) {
+                expect({ id: a.id, catalog }).toEqual({ id: a.id, catalog: [] });
+                expect(last?.sources[0]).toStartWith("url:");
+                expect(last?.date.startsWith(CATALOG_PRICE_DATE)).toBe(true);
+                expect(last?.date).toBe(
+                    monthSnaps
+                        .map((r) => r.date)
+                        .sort()
+                        .at(-1),
+                );
+            } else {
+                expect(catalog.length).toBe(1);
+                expect(last?.date).toBe(CATALOG_PRICE_DATE);
+                expect(last?.priceUsd).toBe(a.price_usd as number);
+                expect(last?.sources).toEqual([`catalog:${a.id}`]);
+            }
         }
-        expect(actuatorsWithHistory().length).toBe(
-            ACTUATORS.filter((a) => a.price_usd != null).length,
+        // Every priced actuator has a history; snapshots may add unpriced ones.
+        const withHistory = new Set(actuatorsWithHistory());
+        for (const a of ACTUATORS.filter((x) => x.price_usd != null))
+            expect(withHistory.has(a.id)).toBe(true);
+        const priced = new Set(
+            ACTUATORS.filter((a) => a.price_usd != null).map((a) => a.id),
         );
+        const snapshotted = new Set(HISTORY_RECORDS.map((r) => r.actuatorId));
+        const trended = new Set(
+            (getTrendChart("actuator-prices")?.series ?? []).map(
+                (s) => s.actuatorId ?? s.id,
+            ),
+        );
+        for (const id of withHistory)
+            expect({
+                id,
+                known: priced.has(id) || snapshotted.has(id) || trended.has(id),
+            }).toEqual({ id, known: true });
     });
 
     test("every point records method, url and FX rate", () => {
@@ -168,9 +209,23 @@ describe("distribution", () => {
         const year = Number(CATALOG_PRICE_DATE.slice(0, 4));
         const groups = groupStats("country", year);
         const total = groups.reduce((s, g) => s + g.n, 0);
-        expect(total).toBe(
-            ACTUATORS.filter((a) => a.price_usd != null && a.peak_torque_nm).length,
+        const ids = groups.flatMap((g) => g.values.map((v) => v.actuatorId));
+        // One value per actuator, for exactly the actuators priced that year
+        // (catalog prices plus any snapshot of an actuator the catalog lacks
+        // a price for), so new snapshots do not break the count.
+        expect(total).toBe(ids.length);
+        expect(new Set(ids).size).toBe(ids.length);
+        const pricedThatYear = new Set(
+            PRICE_POINTS.filter(
+                (p) =>
+                    isPriced(p) && p.usdPerNm !== null && p.date.startsWith(`${year}`),
+            ).map((p) => p.actuatorId),
         );
+        expect([...ids].sort()).toEqual([...pricedThatYear].sort());
+        for (const a of ACTUATORS.filter(
+            (x) => x.price_usd != null && x.peak_torque_nm,
+        ))
+            expect(pricedThatYear.has(a.id)).toBe(true);
         const sorted = groups.map((g) => g.median);
         expect(sorted).toEqual([...sorted].sort((a, b) => a - b));
         for (const g of groups)

@@ -74,9 +74,17 @@ describe("REST /api/v1/prices/{actuatorId}", () => {
         expect(h.points[0]?.method).toBe("wayback");
         expect(h.points[0]?.url).toContain("web.archive.org");
         expect(h.points[0]?.fx_rate).toBe(1);
-        expect(h.points.at(-1)?.sources[0]?.url).toMatch(
-            /^https:\/\/.+\/actuators\/dynamixel-xm430-w350-t$/,
-        );
+        // The last point is the catalog price (linked to the catalog page)
+        // unless an in-stock snapshot this month superseded it.
+        const last = historyFor("dynamixel-xm430-w350-t").at(-1);
+        if (last?.sources[0]?.startsWith("catalog:"))
+            expect(h.points.at(-1)?.sources[0]?.url).toMatch(
+                /^https:\/\/.+\/actuators\/dynamixel-xm430-w350-t$/,
+            );
+        else {
+            expect(h.points.at(-1)?.url).toBe(last?.url as string);
+            expect(h.points.at(-1)?.date).toBe(last?.date as string);
+        }
         expect(h.latest?.price_usd).toBeGreaterThan(0);
         expect(h.change_1y?.from_date).toBe(
             yearChange("dynamixel-xm430-w350-t")?.from.date,

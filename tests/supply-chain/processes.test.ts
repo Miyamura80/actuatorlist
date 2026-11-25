@@ -171,7 +171,7 @@ describe("magnet process chain", () => {
                 .filter((s) => s.keyNumbers.length === 0)
                 .map((s) => s.id),
         ).toEqual(["inspection"]);
-        expect(auditRegistry("2026-11-03").errors).toEqual([]);
+        expect(auditRegistry().errors).toEqual([]);
     });
 
     test("at least twelve animated vignettes, each valid", () => {
