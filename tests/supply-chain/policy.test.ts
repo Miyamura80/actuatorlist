@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { SDK_AS_OF } from "@/sdk";
 import { auditRegistry } from "@/supply-chain/audit";
 import { METAL_EVENTS } from "@/supply-chain/metals";
 import {
@@ -34,9 +33,9 @@ describe("policy dataset", () => {
 
     test("every measure passes the integrity rules and the citation audit", () => {
         expect(policyErrors(POLICY_AS_OF)).toEqual([]);
-        // The registry audit also covers /sdk evidence, dated up to SDK_AS_OF.
-        const asOf = SDK_AS_OF > POLICY_AS_OF ? SDK_AS_OF : POLICY_AS_OF;
-        expect(auditRegistry(asOf).errors).toEqual([]);
+        // The registry audit also covers /sdk evidence and weekly price
+        // snapshots, so it runs as of today rather than a frozen date.
+        expect(auditRegistry().errors).toEqual([]);
     });
 
     test("a measure without a primary source fails", () => {

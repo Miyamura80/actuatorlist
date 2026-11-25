@@ -20,10 +20,13 @@ import { get as getShared } from "./agent-helpers";
 
 const ORIGIN = "https://actuatorlist.com";
 
-// This crawl makes a few hundred requests; a client key of its own keeps it
-// from using up the shared API rate-limit window the other tests run in.
+// This crawl makes a few hundred requests, well over the API's per-client
+// limit (RATE_LIMIT a minute) once every humanoid and price history is
+// linked. As in api.test.ts, each request gets a client key of its own, so
+// the crawl never trips the shared limiter or uses up another test's window.
+let client = 0;
 const get = (path: string) =>
-    getShared(path, { "x-forwarded-for": "supply-chain-links-test" });
+    getShared(path, { "x-forwarded-for": `supply-chain-links-test-${client++}` });
 const PUBLIC_DIR = join(import.meta.dir, "../../frontend/public");
 
 const PAGES = [
